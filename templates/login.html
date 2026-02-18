@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select Profile</title>
+
+    <style>
+        /* ============================================================================================================== */
+        /* Colors and spacing for the page */
+        /* ============================================================================================================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        /* ============================================================================================================== */
+        /* The white box in center */
+        /* ============================================================================================================== */
+        .container {
+            background: white;
+            padding: 50px 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 900px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 32px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #999;
+            margin-bottom: 50px;
+            font-size: 14px;
+        }
+
+        /* ============================================================================================================== */
+        /* PROFILE CARDS */
+        /* ============================================================================================================== */
+        .profiles-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .profile-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid transparent;
+            transition: 0.3s;
+            position: relative;
+        }
+
+      
+        .profile-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+
+     
+        .profile-card.selected {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+
+        /* Profile Icon (colors, initial, and stuff) */
+        .profile-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 40px;
+            margin-bottom: 15px;
+            color: white;
+            font-weight: bold;
+        }
+
+        .profile-name {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            text-align: center;
+            margin-bottom: 5px;
+        }
+
+        .profile-username {
+            font-size: 12px;
+            color: #999;
+            text-align: center;
+        }
+
+        .avatar-1 { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .avatar-2 { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .avatar-3 { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+        .avatar-4 { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
+        .avatar-5 { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
+
+
+        /* ============================================================================================================== */
+        /* REMOVE BUTTON */
+        /* ============================================================================================================== */
+        .remove-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: #ff4444;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            min-width: 28px;
+            min-height: 28px;
+            padding: 0;
+            font-size: 20px;
+            line-height: 1;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            transition: 0.2s;
+        }
+
+        
+        .profile-card:hover .remove-btn {
+            display: flex;
+        }
+
+        
+        .remove-btn:hover {
+            background: #cc0000;
+            transform: scale(1.1);
+        }
+
+        
+
+        /* ============================================================================================================== */
+        /* PASSWORD & LOGIN AREA */
+        /* ============================================================================================================== */
+        .login-section {
+            text-align: center;
+            border-top: 2px solid #eee;
+            padding-top: 30px;
+        }
+
+        .login-section h2 {
+            color: #666;
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+
+        
+        .password-form {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            max-width: 400px;
+            margin: 0 auto 20px;
+        }
+
+        
+        input[type="password"] {
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            flex: 1;
+        }
+
+        
+        input[type="password"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        /* ================================================== */
+        /* BUTTONS - Sign in and Add Profile buttons         */
+        /* ================================================== */
+        button {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        
+        button:hover {
+            transform: translateY(-2px);
+        }
+
+        
+        .btn-login {
+            background: linear-gradient(135deg, #667eea 0%, #a794b9 100%);
+            color: white;
+        }
+
+        
+        .btn-add {
+            background: #f5f5f5;
+            color: #333;
+            border: 2px solid #ddd;
+        }
+
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        /* ============================================================================================================== */
+        /* SUCCESS & ERROR MESSAGES */
+        /* ============================================================================================================== */
+        .message {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: bold;
+            display: none;
+        }
+
+        
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            display: block;
+        }
+
+        
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            display: block;
+        }
+
+        
+        .password-error {
+            background: #fff3cd;
+            color: #856404;
+            padding: 12px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-size: 14px;
+            display: none;
+            border-left: 4px solid #ffc107;
+        }
+
+       
+        .password-error.show {
+            display: block;
+        }
+
+        .password-error strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        
+        .password-hint {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+
+        /* ============================================================================================================== */
+        /*  adding new profiles */
+        /* ============================================================================================================== */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+
+       
+        .modal.show {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+      
+        .modal-content {
+            background-color: white;
+            padding: 40px;
+            border-radius: 10px;
+            max-width: 400px;
+            width: 100%;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-content h2 {
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+      
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: bold;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+       
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+       
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+        }
+
+        .modal-buttons button {
+            flex: 1;
+            padding: 12px;
+        }
+
+        
+        .btn-cancel {
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        
+        .btn-create {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+
+
+
+    <!-- ================================================== -->
+    <!-- MAIN PAGE -->
+    <!-- ================================================== -->
+    <div class="container">
+        <h1>Select a Profile</h1>
+        <p class="subtitle">Choose your account or create a new one</p>
+
+        <!-- All profile cards show up here -->
+        <div class="profiles-grid" id="profilesGrid"></div>
+
+
+        <!-- Password and buttons section -->
+        <div class="login-section">
+            <h2 id="selectedProfileName">Select a profile to continue</h2>
+
+
+        <!-- Password input -->
+            <div id="passwordSection" style="display: none;">
+                <div class="password-form">
+                    <input type="password" id="passwordInput" placeholder="Enter password">
+                    <button class="btn-login" onclick="handleLogin()">Sign In</button>
+                </div>
+
+
+        <!-- Yellow error box when password is wrong -->
+                <div id="passwordError" class="password-error">
+                    <strong> Password does not work!</strong>
+                    <div class="password-hint">Please try again or select a different profile</div>
+                </div>
+            </div>
+
+
+        <!-- Add profile button -->
+            <div class="button-group">
+                <button class="btn-add" onclick="openAddProfileModal()">+ Add Profile</button>
+            </div>
+
+
+        <!-- Success message shows here -->
+            <div id="message" class="message"></div>
+        </div>
+    </div>
+
+
+    <!-- =========================================================================================================== -->
+    <!-- PROFILE CREATION POP UP -->
+    <!-- =========================================================================================================== -->
+    <div id="addProfileModal" class="modal">
+        <div class="modal-content">
+            <h2>Create New Profile</h2>
+            <form id="createProfileForm">
+                <div class="form-group">
+                    <label for="newUsername">Display Name:</label>
+                    <input type="text" id="newUsername" required placeholder="e.g., John Doe">
+                </div>
+                <div class="form-group">
+                    <label for="newLoginUsername">Username:</label>
+                    <input type="text" id="newLoginUsername" required placeholder="e.g., john_doe">
+                </div>
+                <div class="form-group">
+                    <label for="newPassword">Password:</label>
+                    <input type="password" id="newPassword" required placeholder="Create a password">
+                </div>
+                <div class="modal-buttons">
+                    <button type="button" class="btn-cancel" onclick="closeAddProfileModal()">Cancel</button>
+                    <button type="submit" class="btn-create">Create Profile</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ============================================================================================================================================= -->
+    <!-- JAVASCRIPT -->
+    <!-- ============================================================================================================================================= -->
+    <script>
+
+        /* ============================================================================================================== */
+        /* STORE ALL PROFILES */
+        /* ============================================================================================================== */
+        
+        let profiles = [
+            { id: 1, name: 'John Doe', username: 'john_doe', password: 'password123', avatar: 'avatar-1', initials: 'JD' },
+            { id: 2, name: 'Jane Smith', username: 'jane_smith', password: 'secure456', avatar: 'avatar-2', initials: 'JS' },
+            { id: 3, name: 'Admin', username: 'admin', password: 'admin789', avatar: 'avatar-3', initials: 'AD' },
+            { id: 4, name: 'Demo User', username: 'demo_user', password: 'demo2024', avatar: 'avatar-4', initials: 'DU' }
+        ];
+
+        let selectedProfile = null;
+
+
+        /* ============================================================================================================== */
+        /* LOAD AND SAVE PROFILES */
+        /* ============================================================================================================== */
+        
+        function loadProfiles() {
+            const saved = localStorage.getItem('profiles');
+            if (saved) {
+                profiles = JSON.parse(saved);
+            }
+            renderProfiles();
+        }
+
+        function saveProfiles() {
+            localStorage.setItem('profiles', JSON.stringify(profiles));
+        }
+
+
+        /* ============================================================================================================== */
+        /* DISPLAY ALL PROFILE CARDS */
+        /* ============================================================================================================== */
+        
+        function renderProfiles() {
+            const grid = document.getElementById('profilesGrid');
+            grid.innerHTML = ''; // Clear old profiles first
+
+            
+            profiles.forEach(profile => {
+                const profileCard = document.createElement('div');
+                profileCard.className = 'profile-card';
+                profileCard.onclick = () => selectProfile(profile);
+
+                profileCard.innerHTML = `
+                    <button class="remove-btn" onclick="removeProfile(event, ${profile.id})">×</button>
+                    <div class="profile-avatar ${profile.avatar}">${profile.initials}</div>
+                    <div class="profile-name">${profile.name}</div>
+                    <div class="profile-username">@${profile.username}</div>
+                `;
+
+                grid.appendChild(profileCard);
+            });
+        }
+
+
+        /* ============================================================================================================== */
+        /* PROFILE CLICK */
+        /* ============================================================================================================== */
+        
+        function selectProfile(profile) {
+            selectedProfile = profile;
+            
+            
+            document.querySelectorAll('.profile-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            
+            event.currentTarget.classList.add('selected');
+            document.getElementById('selectedProfileName').textContent = `Enter password for ${profile.name}`;
+            document.getElementById('passwordSection').style.display = 'block';
+            document.getElementById('passwordInput').value = '';
+            document.getElementById('passwordInput').focus();
+            document.getElementById('message').style.display = 'none';
+            document.getElementById('passwordError').classList.remove('show');
+        }
+
+
+        /* ============================================================================================================== */
+        /* REMOVE PROFILE */
+        /* ============================================================================================================== */
+        
+        function removeProfile(event, profileId) {
+            
+            event.stopPropagation();
+
+            
+            const profile = profiles.find(p => p.id === profileId);
+            if (confirm(`Are you sure you want to delete ${profile.name}?`)) {
+                profiles = profiles.filter(p => p.id !== profileId);
+                saveProfiles();
+                renderProfiles();
+                selectedProfile = null;
+                document.getElementById('passwordSection').style.display = 'none';
+                document.getElementById('selectedProfileName').textContent = 'Select a profile to continue';
+                document.getElementById('message').style.display = 'none';
+                
+                showMessage(`✅ ${profile.name} has been deleted!`, 'success');
+            }
+        }
+
+
+        /* ============================================================================================================== */
+        /* CHECK PASSWORD & LOGIN */
+        /* ============================================================================================================== */
+        
+        function handleLogin() {
+            if (!selectedProfile) {
+                showMessage('Please select a profile', 'error');
+                return;
+            }
+
+            const password = document.getElementById('passwordInput').value;
+
+            // Check if password matches
+            if (password === selectedProfile.password) {
+
+                // Password is CORRECT
+                document.getElementById('passwordError').classList.remove('show');
+                showMessage(`✅ Welcome, ${selectedProfile.name}!`, 'success');
+                setTimeout(() => {
+                    alert(`Successfully logged in as ${selectedProfile.name}!`);
+                }, 500);
+            }
+            
+            else {
+                // Password is WRONG
+                document.getElementById('passwordError').classList.add('show');
+                document.getElementById('passwordInput').value = '';
+                document.getElementById('passwordInput').focus();
+            }
+        }
+
+        
+        function showMessage(text, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = text;
+            messageDiv.className = `message ${type}`;
+        }
+
+
+        /* ============================================================================================================== */
+        /* OPEN/CLOSE POP UP (add profile pop up) */
+        /* ============================================================================================================== */
+        
+        function openAddProfileModal() {
+            document.getElementById('addProfileModal').classList.add('show');
+        }
+
+        
+        function closeAddProfileModal() {
+            document.getElementById('addProfileModal').classList.remove('show');
+            document.getElementById('createProfileForm').reset();
+        }
+
+
+        /* ============================================================================================================== */
+        /* CREATE NEW PROFILE */
+        /* ============================================================================================================== */
+       
+        document.getElementById('createProfileForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            
+            const name = document.getElementById('newUsername').value;
+            const username = document.getElementById('newLoginUsername').value;
+            const password = document.getElementById('newPassword').value;
+
+            
+            if (profiles.find(p => p.username === username)) {
+                alert('Username already exists!');
+                return;
+            }
+
+            
+            const initials = name.split(' ').map(word => word[0]).join('').toUpperCase();
+            const avatarClass = `avatar-${(profiles.length % 5) + 1}`;
+
+            profiles.push({
+                id: profiles.length + 1,
+                name: name,
+                username: username,
+                password: password,
+                avatar: avatarClass,
+                initials: initials
+            });
+
+            
+            saveProfiles();
+            renderProfiles();
+            closeAddProfileModal();
+            showMessage('✅ Profile created successfully!', 'success');
+        });
+
+
+        /* ============================================================================================================== */
+        /* EXTRA - for extra functions */
+        /* ============================================================================================================== */
+        
+        // Close pop-up when clicking outside of it
+        window.onclick = function(event) {
+            const modal = document.getElementById('addProfileModal');
+            if (event.target === modal) {
+                closeAddProfileModal();
+            }
+        }
+
+        // Press Enter key to login instead of clicking button
+        document.getElementById('passwordInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                handleLogin();
+            }
+        });
+
+        // Load all profiles when page first opens
+        loadProfiles();
+
+    </script>
+</body>
+</html>
