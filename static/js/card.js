@@ -79,3 +79,20 @@ function updateDisplay() {
         }
     });
 }
+
+// Returns button response to Flask backend
+document.querySelectorAll('.card-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const action = btn.dataset.action;
+
+        fetch('/handle_card_response', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: action })
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log(data.message);
+        });
+    });
+});

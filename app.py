@@ -29,7 +29,16 @@ random_words = [
 def generate_cards():
     selected_words = random.choice(random_words) # Simulate card generation with random words
     selected_words2 = random.choice(random_words) # Simulate card generation with random words
-    return render_template('card.html', main_text_placeholder=selected_words, back_text_placeholder=selected_words2) # This will be the main interface for reviewing cards
+    # This will be the main interface for reviewing cards
+    return render_template('card.html', main_text_placeholder=selected_words, back_text_placeholder=selected_words2) 
+
+@app.route('/handle_card_response', methods=['POST'])
+def handle_card_response():
+    data = request.get_json()
+    response = data.get('action')
+    # Here you would process the user's response and update your spaced repetition algorithm
+    print(f"User marked the card as: {response}")
+    return jsonify({"status": "success"})
 
 # Stats page, where you can see your progress and performance over time
 @app.route('/stats', methods=['GET'])
