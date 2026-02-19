@@ -2,8 +2,10 @@ from flask import Flask, render_template, request, jsonify
 import random
 # from core_logic import AnkiGenerator # Assuming this is your main class/function
 
-app = Flask(__name__)
-# generator = AnkiGenerator()
+app = Flask(__name__,
+            template_folder="app/templates",
+            static_folder="app/static")
+
 
 # Home page, includes profiles, settings, and navigation to other sections 
 @app.route('/')
