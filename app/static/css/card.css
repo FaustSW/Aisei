@@ -22,15 +22,22 @@
 /* ==========================================================================
    2. RESET & BASE STYLES
    ========================================================================== */
-body, html {
+html {
     margin: 0;
     padding: 0;
     height: 100%;
     font-family: sans-serif;
-    background-color: var(--bg-color);
-    color: var(--text-color);
+    background: var(--bg-gradient);
+    color: var(--text-main);
     transition: background-color var(--transition-speed) ease;
     overflow: hidden; /* Prevents scrollbars during 3D animations */
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: var(--bg-gradient);
+    min-height: 100vh;
+    padding: 20px;
 }
 
 /* ==========================================================================
@@ -44,20 +51,22 @@ body, html {
     width: 100vw;
     position: relative;
     z-index: 2;
+    background: transparent; /* Ensure wrapper doesn't block background visuals */
 }
 
 /* Overlaying controls and stats */
-.controls, .stats {
+/*.controls,*/ .stats {
     position: absolute;
     top: 20px;
     z-index: 10;
 }
-
+/*
 .controls {
     right: 20px;
     display: flex;
     gap: 15px;
 }
+    */
 
 .stats {
     left: 20px;
@@ -77,7 +86,7 @@ body, html {
     max-width: 1000px;
     aspect-ratio: 16 / 9;
     perspective: 1500px;
-    background-color: transparent;
+    background: transparent; /* Ensure card itself doesn't block background visuals */
     overflow: visible; /* Required for 3D flip */
 }
 
@@ -87,6 +96,7 @@ body, html {
     height: 100%;
     transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
     transform-style: preserve-3d;
+    background: transparent; /* Ensure inner doesn't block background visuals */
 }
 
 .is-flipped {
@@ -155,8 +165,8 @@ body, html {
     padding: 10px 20px;
     border: none;
     border-radius: 8px;
-    background-color: var(--button-bg);
-    color: var(--text-color);
+    background: var(--primary-gradient);
+    color: white;
     cursor: pointer;
     transition: transform 0.1s ease, background-color 0.2s;
 }
@@ -165,6 +175,21 @@ body, html {
     transform: scale(1.05);
     background-color: var(--accent-color);
     color: white;
+}
+
+button {
+    padding: 12px 30px;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+        
+button:hover {
+    transform: translateY(-2px);
 }
 
 .icon-btn {

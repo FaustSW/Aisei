@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{% endblock %}</title>
+
+    <!-- Global CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+    <!-- ================================================== -->
+    <!-- Controls acting as a header (theme toggle / settings) -->
+    <!-- ================================================== -->
+    <div class="controls">
+        <button class="header-btn" title="Toggle Theme">🖌</button>
+        <button class="header-btn" title="Settings">⚙</button>
+    </div>
+
+    <!-- ================================================== -->
+    <!-- Page-specific content -->
+    <!-- ================================================== -->
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Global JS for theme switching -->
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/header.js') }}"></script>
+    {% block extra_js %}{% endblock %}
+
+</body>
+</html>

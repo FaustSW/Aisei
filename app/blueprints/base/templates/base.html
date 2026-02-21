@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}{% endblock %}</title>
+
+    <!-- Global CSS -->
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/main.css') }}">
+
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+
+    <!-- UNIFIED HEADER -->
+    <header class="app-header">
+        <div class="logo">My App</div>
+
+        <div class="header-controls">
+            <button id="theme-toggle" class="icon-btn">🎨</button>
+        </div>
+    </header>
+
+    <!-- PAGE CONTENT -->
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Global JS -->
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

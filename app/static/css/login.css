@@ -9,8 +9,13 @@
 
         body {
             font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--bg-gradient);
             min-height: 100vh;
+            padding: 20px;
+        }
+
+        main {
+            min-height: calc(100vh - 70px); /* subtract header height */
             display: flex;
             justify-content: center;
             align-items: center;
@@ -21,7 +26,7 @@
         /* The white box in center */
         /* ============================================================================================================== */
         .container {
-            background: white;
+            background: var(--bg-card);
             padding: 50px 40px;
             border-radius: 15px;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
@@ -31,14 +36,14 @@
 
         h1 {
             text-align: center;
-            color: #333;
+            color: var(--text-main);
             margin-bottom: 10px;
             font-size: 32px;
         }
 
         .subtitle {
             text-align: center;
-            color: #999;
+            color: var(--text-muted);
             margin-bottom: 50px;
             font-size: 14px;
         }
@@ -73,7 +78,7 @@
 
      
         .profile-card.selected {
-            border-color: #667eea;
+            border-color: var(--primary);
             background: #f0f4ff;
         }
 
@@ -209,7 +214,7 @@
 
         
         .btn-login {
-            background: linear-gradient(135deg, #667eea 0%, #a794b9 100%);
+            background: var(--primary-gradient);
             color: white;
         }
 
@@ -241,15 +246,15 @@
 
         
         .message.success {
-            background: #d4edda;
-            color: #155724;
+            background: var(--success-bg);
+            color: var(--success-text);
             display: block;
         }
 
         
         .message.error {
-            background: #f8d7da;
-            color: #721c24;
+            background: var(--error-bg);
+            color: var(--error-text);
             display: block;
         }
 
@@ -334,7 +339,7 @@
         .form-group input {
             width: 100%;
             padding: 12px;
-            border: 2px solid #ddd;
+            border: 2px solid var(--border-color);
             border-radius: 5px;
             font-size: 16px;
         }
@@ -365,6 +370,6 @@
 
         
         .btn-create {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--primary-gradient);
             color: white;
         }

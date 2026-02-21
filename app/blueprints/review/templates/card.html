@@ -1,28 +1,25 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Card Interface</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/card.css') }}">
-</head>
+{% extends "base.html" %}
 
-<body data-theme="light">
+{% block title %}Card Interface{% endblock %}
 
-    <div class="stats">
-        <div>Current Streak: <span id="current-streak">0</span></div>
-        <div>Max Streak: <span id="max-streak">0</span></div>
-    </div>
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/card.css') }}">
+{% endblock %}
 
-    <div class="controls">
-        <button class="icon-btn" id="theme-toggle" title="Toggle Dark/Light Mode">☾</button>
-        <button class="icon-btn" title="Settings">⚙</button>
-    </div>
+{% block content %}
 
-    <div class="wrapper">
+<!-- Stats -->
+<div class="stats">
+    <div>Current Streak: <span id="current-streak">0</span></div>
+    <div>Max Streak: <span id="max-streak">0</span></div>
+</div>
+
+<!-- Flashcards wrapper -->
+<div class="wrapper">
     <div class="card" id="main-card">
         <div class="card-inner" id="card-inner">
-            
+
+            <!-- Front of Card -->
             <div class="card-face card-front">
                 <div class="content-area">
                     <div class="large-text">
@@ -34,6 +31,7 @@
                 </div>
             </div>
 
+            <!-- Back of Card -->
             <div class="card-face card-back">
                 <div class="content-area">
                     <div class="large-text">
@@ -62,18 +60,21 @@
 
         </div>
     </div>
-    </div>
+</div>
 
-    <div class="chart-container">
-        <div class="bar" id="bar-0"></div>
-        <div class="bar" id="bar-1"></div>
-        <div class="bar" id="bar-2"></div>
-        <div class="bar" id="bar-3"></div>
-    </div>
+<!-- Chart -->
+<div class="chart-container">
+    <div class="bar" id="bar-0"></div>
+    <div class="bar" id="bar-1"></div>
+    <div class="bar" id="bar-2"></div>
+    <div class="bar" id="bar-3"></div>
+</div>
 
-    <script>
-        const HANDLE_CARD_URL = "{{ url_for('review.handle_card_response') }}";
-    </script>
-    <script src="{{ url_for('static', filename='js/card.js') }}"></script>
-</body>
-</html>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const HANDLE_CARD_URL = "{{ url_for('review.handle_card_response') }}";
+</script>
+<script src="{{ url_for('static', filename='js/card.js') }}"></script>
+{% endblock %}
