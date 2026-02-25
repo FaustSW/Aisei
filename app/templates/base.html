@@ -47,6 +47,41 @@
             background-color: var(--primary);
             color: white;
         }
+
+        .theme-selector {
+            position: fixed;
+            top: 20px;
+            right: 70px;
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: var(--bg-card);
+            padding: 8px 12px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .controls label {
+            font-weight: bold;
+            white-space: nowrap;
+            color: var(--text-main);
+        }
+
+        .controls select {
+            padding: 8px 12px;
+            border-radius: 5px;
+            border: 2px solid var(--primary);
+            cursor: pointer;
+            font-size: 14px;
+            background-color: var(--bg-card);
+            color: var(--text-main);
+        }
+
+        .controls select:hover {
+            background-color: var(--primary);
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -54,18 +89,16 @@
     <!-- ============================================================================================================== -->
     <!-- THEME SELECTOR DROPDOWN -->
     <!-- ============================================================================================================== -->
+
     <div class="theme-selector">
+    <div class="control-group">
         <label for="theme-dropdown">Theme:</label>
         <select id="theme-dropdown" onchange="changeTheme()">
             <option value="">Loading...</option>
         </select>
     </div>
 
-    <!-- ================================================== -->
-    <!-- Controls acting as a header (theme toggle / settings) -->
-    <!-- ================================================== -->
-    <div class="controls">
-        <button class="header-btn" title="Settings">⚙</button>
+    <button class="header-btn" title="Settings">⚙</button>
     </div>
 
     <!-- ================================================== -->

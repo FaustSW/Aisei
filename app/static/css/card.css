@@ -22,22 +22,19 @@
 /* ==========================================================================
    2. RESET & BASE STYLES
    ========================================================================== */
-html {
+
+html, body {
     margin: 0;
     padding: 0;
-    height: 100%;
-    font-family: sans-serif;
-    background: var(--bg-gradient);
-    color: var(--text-main);
-    transition: background-color var(--transition-speed) ease;
-    overflow: hidden; /* Prevents scrollbars during 3D animations */
+    width: 100%;
+    height: 100%; /* Force height to exactly match viewport */
+    overflow: hidden; /* This is the "kill switch" for all scrollbars */
+    font-family: Arial, sans-serif;
 }
 
 body {
-    font-family: Arial, sans-serif;
     background: var(--bg-gradient);
-    min-height: 100vh;
-    padding: 20px;
+    /* Remove min-height: 100vh; it's redundant now */
 }
 
 /* ==========================================================================
@@ -47,11 +44,12 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
-    width: 100vw;
+    height: 100%;
+    width: 100%;
     position: relative;
     z-index: 2;
     background: transparent; /* Ensure wrapper doesn't block background visuals */
+    perspective: 2000px;
 }
 
 /* Overlaying controls and stats */
@@ -60,13 +58,6 @@ body {
     top: 20px;
     z-index: 10;
 }
-/*
-.controls {
-    right: 20px;
-    display: flex;
-    gap: 15px;
-}
-    */
 
 .stats {
     left: 20px;
