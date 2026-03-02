@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}{% endblock %}</title>
 
     <!-- Global CSS -->
@@ -9,9 +10,82 @@
           href="{{ url_for('static', filename='css/main.css') }}">
 
     {% block extra_css %}{% endblock %}
+
+    <!-- ============================================================================================================== -->
+    <!-- THEME SELECTOR STYLES -->
+    <!-- ============================================================================================================== -->
+    <style>
+        .theme-selector {
+            position: fixed;
+            top: 20px;
+            right: 140px;
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: var(--bg-card);
+            padding: 8px 12px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .theme-selector label {
+            font-weight: bold;
+            white-space: nowrap;
+            color: var(--text-main);
+            font-size: 12px;
+        }
+
+        .theme-selector select {
+            padding: 6px 8px;
+            border-radius: 4px;
+            border: 2px solid var(--primary);
+            cursor: pointer;
+            font-size: 12px;
+            background-color: var(--bg-card);
+            color: var(--text-main);
+        }
+
+        .theme-selector select:hover {
+            background-color: var(--primary);
+            color: white;
+        }
+    </style>
 </head>
 
 <body>
+
+    <!-- ============================================================================================================== -->
+    <!-- PROGRESS BAR - Top of page showing session progress -->
+    <!-- ============================================================================================================== -->
+    <div class="progress-bar-container">
+        <div class="progress-bar" id="progress-bar">
+            <div class="progress-segment" id="segment-again" style="width: 0%;" data-action="again"></div>
+            <div class="progress-segment" id="segment-hard" style="width: 0%;" data-action="hard"></div>
+            <div class="progress-segment" id="segment-good" style="width: 0%;" data-action="good"></div>
+            <div class="progress-segment" id="segment-easy" style="width: 0%;" data-action="easy"></div>
+        </div>
+        <div class="progress-text">
+            <span id="cards-reviewed">0</span> / <span id="total-cards">20</span> cards
+        </div>
+    </div>
+
+    <!-- ============================================================================================================== -->
+    <!-- THEME SELECTOR DROPDOWN -->
+    <!-- ============================================================================================================== -->
+    <div class="theme-selector">
+        <label for="theme-dropdown">Theme:</label>
+        <select id="theme-dropdown" onchange="changeTheme()">
+            <option value="">Loading...</option>
+        </select>
+    </div>
+
+    <!-- ================================================== -->
+    <!-- Controls acting as a header (theme toggle / settings) -->
+    <!-- ================================================== -->
+    <div class="controls">
+        <button class="header-btn" title="Settings">⚙</button>
+    </div>
 
     <!-- UNIFIED HEADER -->
     <header class="app-header">
@@ -29,6 +103,7 @@
 
     <!-- Global JS -->
     <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/header.js') }}"></script>
 
     {% block extra_js %}{% endblock %}
 </body>

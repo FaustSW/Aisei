@@ -13,8 +13,18 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentStreak = 0;
     let maxStreak = 0;
     let barHeights = [0, 0, 0, 0];
+    
+    // Progress bar state
+    const TOTAL_CARDS = 20;
+    let reviewCounts = { again: 0, hard: 20, good: 0, easy: 0 };
+    let totalReviewed = 0;
 
-    // 3. THEME LOGIC (works with base.html theme button)
+    // 3. INITIALIZE PROGRESS BAR ON PAGE LOAD
+    function initProgressBar() {
+        updateProgressBar();
+    }
+
+    // 4. THEME LOGIC (works with base.html theme button)
     if (themeToggle) {
         themeToggle.addEventListener('click', () => {
             const currentTheme = body.getAttribute('data-theme') || 'light';
@@ -23,7 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 4. FLIP LOGIC
+    // 5. FLIP LOGIC
     function flipCard() {
         if (cardInner) cardInner.classList.toggle('is-flipped');
     }
@@ -53,19 +63,29 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 5. STREAK & BAR LOGIC
+    // 6. STREAK & BAR LOGIC
     buttons.forEach((btn, index) => {
         btn.addEventListener('click', () => {
             // Increase corresponding bar
             barHeights[index] = Math.min(barHeights[index] + 10, 100);
-
+            
+            // Update progress bar
+            const action = btn.dataset.action;
+            
+            // Decrement hard count and increment the clicked action
+            if (reviewCounts.hard > 0) {
+                reviewCounts.hard--;
+            }
+            reviewCounts[action]++;
+            totalReviewed++;
+            
+            updateProgressBar();
             updateDisplay();
 
             // Auto-flip back to front after picking an answer
             setTimeout(flipCard, 200);
 
             // Send action to backend
-            const action = btn.dataset.action;
             if (typeof HANDLE_CARD_URL !== 'undefined') {
                 fetch(HANDLE_CARD_URL, {
                     method: 'POST',
@@ -79,6 +99,25 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    function updateProgressBar() {
+        const percentAgain = (reviewCounts.again / TOTAL_CARDS) * 100;
+        const percentHard = (reviewCounts.hard / TOTAL_CARDS) * 100;
+        const percentGood = (reviewCounts.good / TOTAL_CARDS) * 100;
+        const percentEasy = (reviewCounts.easy / TOTAL_CARDS) * 100;
+
+        const segAgain = document.getElementById('segment-again');
+        const segHard = document.getElementById('segment-hard');
+        const segGood = document.getElementById('segment-good');
+        const segEasy = document.getElementById('segment-easy');
+        const cardsReviewed = document.getElementById('cards-reviewed');
+
+        if (segAgain) segAgain.style.width = percentAgain + '%';
+        if (segHard) segHard.style.width = percentHard + '%';
+        if (segGood) segGood.style.width = percentGood + '%';
+        if (segEasy) segEasy.style.width = percentEasy + '%';
+        if (cardsReviewed) cardsReviewed.innerText = totalReviewed;
+    }
+
     function updateDisplay() {
         if (currentStreakText) currentStreakText.innerText = currentStreak;
         if (maxStreakText) maxStreakText.innerText = maxStreak;
@@ -88,4 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (bar) bar.style.height = height + '%';
         });
     }
+
+    // Initialize progress bar on page load
+    initProgressBar();
 });

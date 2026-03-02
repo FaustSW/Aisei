@@ -27,14 +27,14 @@ html, body {
     margin: 0;
     padding: 0;
     width: 100%;
-    height: 100%; /* Force height to exactly match viewport */
-    overflow: hidden; /* This is the "kill switch" for all scrollbars */
+    height: 100%;
+    overflow: hidden;
     font-family: Arial, sans-serif;
 }
 
 body {
     background: var(--bg-gradient);
-    /* Remove min-height: 100vh; it's redundant now */
+    padding-top: 70px;
 }
 
 /* ==========================================================================
@@ -48,19 +48,26 @@ body {
     width: 100%;
     position: relative;
     z-index: 2;
-    background: transparent; /* Ensure wrapper doesn't block background visuals */
+    background: transparent;
     perspective: 2000px;
 }
 
-/* Overlaying controls and stats */
-/*.controls,*/ .stats {
-    position: absolute;
-    top: 20px;
-    z-index: 10;
+/* Controls (Theme & Settings buttons) */
+.controls {
+    position: fixed;
+    top: 60px;
+    right: 20px;
+    z-index: 1001;
+    display: flex;
+    gap: 10px;
 }
 
+/* Stats overlay */
 .stats {
+    position: absolute;
+    top: 20px;
     left: 20px;
+    z-index: 10;
     display: flex;
     flex-direction: column;
     gap: 5px;
@@ -77,8 +84,8 @@ body {
     max-width: 1000px;
     aspect-ratio: 16 / 9;
     perspective: 1500px;
-    background: transparent; /* Ensure card itself doesn't block background visuals */
-    overflow: visible; /* Required for 3D flip */
+    background: transparent;
+    overflow: visible;
 }
 
 .card-inner {
@@ -87,7 +94,7 @@ body {
     height: 100%;
     transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
     transform-style: preserve-3d;
-    background: transparent; /* Ensure inner doesn't block background visuals */
+    background: transparent;
 }
 
 .is-flipped {
@@ -105,7 +112,7 @@ body {
     border-radius: 15px;
     background-color: var(--card-bg);
     box-shadow: var(--card-shadow);
-    overflow: hidden; /* Keeps button-row from bleeding over corners */
+    overflow: hidden;
 }
 
 .card-back {
@@ -178,7 +185,6 @@ button {
     transition: 0.2s;
 }
 
-        
 button:hover {
     transform: translateY(-2px);
 }
@@ -217,7 +223,68 @@ button:hover {
 }
 
 /* ==========================================================================
-   7. RESPONSIVE DESIGN
+   PROGRESS BAR - Top of page showing session progress
+   ========================================================================== */
+
+.progress-bar-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    background: var(--card-bg);
+    border-bottom: 2px solid var(--text-color);
+    padding: 5px 0;
+    height: 50px;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 25px;
+    display: flex;
+    border-radius: 0;
+    overflow: hidden;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.progress-segment {
+    height: 100%;
+    transition: width 0.5s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: white;
+    font-size: 12px;
+}
+
+/* Color for each difficulty level */
+.progress-segment[data-action="again"] {
+    background-color: #bb009c; /* Purple */
+}
+
+.progress-segment[data-action="hard"] {
+    background-color: #ff0000; /* Red */
+}
+
+.progress-segment[data-action="good"] {
+    background-color: #18c2e0; /* Blue */
+}
+
+.progress-segment[data-action="easy"] {
+    background-color: #33f321; /* Green */
+}
+
+.progress-text {
+    text-align: center;
+    font-size: 11px;
+    color: var(--text-color);
+    margin-top: 2px;
+    font-weight: 600;
+}
+
+/* ==========================================================================
+   8. RESPONSIVE DESIGN
    ========================================================================== */
 @media (max-width: 768px) {
     .card { 
@@ -228,4 +295,14 @@ button:hover {
     .large-text { font-size: 1.8rem; }
     .card-btn { padding: 8px 12px; font-size: 0.8rem; }
     .stats { top: 10px; left: 10px; font-size: 0.8rem; }
+
+    /* Controls (Theme & Settings buttons) */
+    .controls {
+        position: fixed;
+        top: 90px;
+        right: 20px;
+        z-index: 1001;
+        display: flex;
+        gap: 10px;
+    }
 }

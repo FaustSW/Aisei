@@ -12,23 +12,35 @@
 <body>
 
     <!-- ============================================================================================================== -->
+    <!-- PROGRESS BAR - Top of page showing session progress -->
+    <!-- ============================================================================================================== -->
+    <div class="progress-bar-container">
+        <div class="progress-bar" id="progress-bar">
+            <div class="progress-segment" id="segment-again" style="width: 0%;" data-action="again"></div>
+            <div class="progress-segment" id="segment-hard" style="width: 0%;" data-action="hard"></div>
+            <div class="progress-segment" id="segment-good" style="width: 0%;" data-action="good"></div>
+            <div class="progress-segment" id="segment-easy" style="width: 0%;" data-action="easy"></div>
+        </div>
+        <div class="progress-text">
+            <span id="cards-reviewed">0</span> / <span id="total-cards">20</span> cards
+        </div>
+    </div>
+
+    <!-- ============================================================================================================== -->
     <!-- THEME SELECTOR DROPDOWN -->
     <!-- ============================================================================================================== -->
-
     <div class="theme-selector">
-    <div class="control-group">
-        <label for="theme-dropdown">Theme:</label>
-        <select id="theme-dropdown" onchange="changeTheme()">
-            <option value="">Loading...</option>
-        </select>
+        <div class="control-group">
+            <label for="theme-dropdown">Theme:</label>
+            <select id="theme-dropdown" onchange="changeTheme()">
+                <option value="">Loading...</option>
+            </select>
+        </div>
+
+        <button class="header-btn" title="Settings">⚙</button>
     </div>
 
-    <button class="header-btn" title="Settings">⚙</button>
-    </div>
-
-    <!-- ================================================== -->
-    <!-- Page-specific content -->
-    <!-- ================================================== -->
+    <!-- PAGE CONTENT -->
     <main>
         {% block content %}{% endblock %}
     </main>
