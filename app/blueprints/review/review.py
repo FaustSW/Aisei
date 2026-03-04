@@ -45,3 +45,28 @@ def handle_card_response():
     # Here you would process the user's response and update your spaced repetition algorithm
     print(f"User marked the card as: {response}")
     return jsonify({"status": "success"})
+
+# ------------------------
+# Review API stub endpoints
+# ------------------------
+
+@review_bp.get("/api/next")
+def api_review_next():
+    return jsonify({
+        "card_id": 1,
+        "spanish": "hola",
+        "english": "hello"
+    })
+
+
+@review_bp.post("/api/<int:card_id>")
+def api_review_grade(card_id):
+    data = request.get_json(force=True)
+    rating = data.get("rating", 2)
+
+    return jsonify({
+        "card_id": card_id,
+        "rating": rating,
+        "message": "Review saved (demo stub)",
+        "next_due_days": 3
+    })
