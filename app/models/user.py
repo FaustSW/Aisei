@@ -6,12 +6,13 @@ A registered account in the system.
 Fields:
     id            — primary key
     username      — unique login/display name
+    display_name  — friendly name shown on profile badge
     password_hash — hashed password (hashing logic lives in auth service, not here)
+    avatar        — CSS class for avatar color (e.g. "avatar-1")
     created_at    — account creation timestamp (UTC)
 
 This model only stores identity and auth data.
-Learning state is tracked per-user through Card records.
-Table name is "user" to match Card's foreign_key="user.id".
+Learning state is tracked per-user through ReviewState records.
 """
 
 from __future__ import annotations
@@ -39,5 +40,15 @@ class User(SQLModel, table=True):
 
     id: Optional[int] = Field(default=None, primary_key=True)
     username: str = Field(unique=True, index=True)
+    display_name: str = Field(default="")
     password_hash: str
+    avatar: str = Field(default="avatar-1")
     created_at: datetime = Field(default_factory=utcnow)
+
+    @property
+    def initials(self) -> str:
+        """Derive initials from display_name (e.g. 'Demo User' -> 'DU')."""
+        parts = self.display_name.strip().split()
+        if not parts:
+            return self.username[:2].upper()
+        return "".join(word[0] for word in parts).upper()[:2]

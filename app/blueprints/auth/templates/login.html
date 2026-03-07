@@ -81,5 +81,8 @@
 {% endblock %}
 
 {% block extra_js %}
+<script>
+    const PROFILES_FROM_DB = JSON.parse('{{ profiles_json | safe }}');
+</script>
 <script src="{{ url_for('static', filename='js/login.js') }}"></script>
 {% endblock %}
