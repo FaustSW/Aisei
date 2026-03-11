@@ -154,6 +154,12 @@ def go_to_review():
     return redirect(url_for('review.generate_cards'))
 
 
+@auth_bp.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('auth.index'))
+
+
 def _seed_review_states(db, user_id: int):
     """Create a ReviewState for every vocab item for this new user."""
     vocabs = db.exec(select(Vocab)).all()

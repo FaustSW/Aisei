@@ -13,9 +13,49 @@ Required by spec, but lower priority early on.
 
 {% block title %}Stats{% endblock %}
 
+{% block extra_css %}
+<style>
+    .page-actions {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        z-index: 10;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .page-btn {
+        display: inline-block;
+        padding: 8px 16px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-size: 0.9rem;
+        font-weight: bold;
+        text-align: center;
+        cursor: pointer;
+        transition: opacity 0.2s, transform 0.1s;
+    }
+    .page-btn:hover {
+        opacity: 0.85;
+        transform: translateY(-1px);
+    }
+    .btn-back {
+        background: #2ecc71;
+        color: white;
+    }
+    .btn-logout {
+        background: #e74c3c;
+        color: white;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
+<div class="page-actions">
+    <a href="{{ url_for('review.generate_cards') }}" class="page-btn btn-back">&#8592; Go Back</a>
+    <a href="{{ url_for('auth.logout') }}" class="page-btn btn-logout">Log Out</a>
+</div>
 <div class="container">
-    <h1>Study Statistics</h1>
-    <p>Stats page coming soon.</p>
+    <h1>Stats go here</h1>
 </div>
 {% endblock %}

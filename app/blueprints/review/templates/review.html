@@ -10,8 +10,10 @@
 
 <!-- Stats -->
 <div class="stats">
-    <div>Current Streak: <span id="current-streak">0</span></div>
-    <div>Max Streak: <span id="max-streak">0</span></div>
+    <!-- <div>Current Streak: <span id="current-streak">0</span></div> -->
+    <!-- <div>Max Streak: <span id="max-streak">0</span></div> -->
+    <a href="{{ url_for('auth.logout') }}" class="stat-btn btn-logout">Log Out</a>
+    <a href="{{ url_for('stats.stats') }}" class="stat-btn btn-stats">Stats</a>
 </div>
 
 <!-- Progress Bar (segmented by rating) -->
