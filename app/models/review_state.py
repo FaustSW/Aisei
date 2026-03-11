@@ -42,6 +42,4 @@ class ReviewState(SQLModel, table=True):
     success_streak:  int = Field(default=0)
 
     # Points to the currently active GeneratedCard (nullable until first generation)
-    current_generated_card_id: Optional[int] = Field(default=None)
-    # Note: not a FK yet — avoids circular dependency with GeneratedCard.
-    # Wire as a proper FK once GeneratedCard is fully implemented.
+    current_generated_card_id: Optional[int] = Field(default=None, foreign_key="generated_card.id")
