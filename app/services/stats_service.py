@@ -1,37 +1,19 @@
 """
 stats_service.py
 
-Computes user-facing progress metrics from ReviewLog data.
+Computes user-facing progress metrics from ReviewLog and ReviewState data.
 
-Primary Responsibilities:
-- Calculate counts and summary statistics for display (e.g., due cards, new cards introduced,
-  reviews completed today, total reviews, streaks if implemented).
-- Provide data in simple, template-friendly structures (dicts/lists/numbers).
-- Encapsulate all "how do we compute this metric?" logic in one place.
+Current responsibilities:
+- Count ratings selected today
+- Count cards in New / Learning / Review buckets
+- Count total reviewed today
+- Compute current / max streak for today
+- Count cards due right now
 
-This service exists to keep statistics logic out of:
-- Blueprints (web layer)
-- Templates (presentation layer)
-- Review service (workflow orchestration)
-
-It SHOULD:
-- Read from the database models needed to compute metrics (Card, ReviewLog, etc.).
-- Return simple computed values that templates can render directly.
-- Keep metric definitions consistent across the app (single source of truth).
-
-It SHOULD NOT:
-- Handle HTTP requests, sessions, redirects, or template rendering.
-- Perform scheduling updates or review workflow logic (review_service handles that).
-- Call external APIs (GPT/TTS) or trigger content generation.
-- Define database schema (models handle that).
-
-Architectural Position:
-
-Blueprint (stats page endpoint) → stats_service → models (Card, ReviewLog, User, etc.)
-
-Key Concept:
-stats_service answers "what are the numbers?".
-It does not change learning state; it only reports it.
+Important queue note:
+For the New / Learning / Review display on the review page, we count cards
+due by the end of the current simulated day. This is closer to how Anki-style
+queue counts are usually presented than counting only cards due at this exact second.
 """
 
 from __future__ import annotations
@@ -39,42 +21,92 @@ from __future__ import annotations
 from datetime import datetime, timezone, timedelta
 from typing import Optional
 
-from sqlmodel import select, col, func
+from flask import session as flask_session
+from sqlmodel import select, col
 
 from app.db import get_session
 from app.models.review_log import ReviewLog
 from app.models.review_state import ReviewState
+from app.services.queue_utils import get_queue_bucket
+
+
+def get_simulated_now() -> datetime:
+    """Return simulated time if active, otherwise real current UTC time."""
+    sim = flask_session.get("simulated_time")
+    if sim:
+        dt = datetime.fromisoformat(sim)
+        if dt.tzinfo is None:
+            return dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone(timezone.utc)
+    return datetime.now(timezone.utc)
+
+
+def _as_utc(dt: Optional[datetime]) -> Optional[datetime]:
+    """Normalize datetimes to timezone-aware UTC."""
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
 
 
 def get_session_stats(user_id: int) -> dict:
     """
-    Compute review stats for the current session (today, UTC).
+    Compute review stats for the current simulated day (UTC).
 
     Returns:
         {
             "total_reviewed": int,
-            "counts": { "again": int, "hard": int, "good": int, "easy": int },
+            "counts": {
+                "again": int,
+                "hard": int,
+                "good": int,
+                "easy": int,
+            },
             "current_streak": int,
             "max_streak": int,
             "cards_due": int,
+            "new_cards": int,
+            "learning_cards": int,
+            "review_cards": int,
         }
     """
-    session = get_session()
+    db_session = get_session()
     try:
-        # "Today" = since midnight UTC
-        now = datetime.now(timezone.utc)
+        now = get_simulated_now()
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        today_end = today_start + timedelta(days=1)
 
-        # All reviews today, ordered chronologically
-        statement = (
+        all_states = db_session.exec(
+            select(ReviewState).where(ReviewState.user_id == user_id)
+        ).all()
+
+        due_today_states = [
+            rs for rs in all_states
+            if _as_utc(rs.due_date) is not None and _as_utc(rs.due_date) <= today_end
+        ]
+
+        new_cards = [
+            rs for rs in due_today_states
+            if get_queue_bucket(rs) == "new"
+        ]
+        learning_cards = [
+            rs for rs in due_today_states
+            if get_queue_bucket(rs) == "learning"
+        ]
+        review_cards = [
+            rs for rs in due_today_states
+            if get_queue_bucket(rs) == "review"
+        ]
+
+        reviews = db_session.exec(
             select(ReviewLog)
             .where(ReviewLog.user_id == user_id)
             .where(col(ReviewLog.reviewed_at) >= today_start)
+            .where(col(ReviewLog.reviewed_at) < today_end)
             .order_by(col(ReviewLog.reviewed_at).asc())
-        )
-        reviews = session.exec(statement).all()
+        ).all()
 
-        # Rating counts
         counts = {"again": 0, "hard": 0, "good": 0, "easy": 0}
         rating_map = {1: "again", 2: "hard", 3: "good", 4: "easy"}
 
@@ -86,7 +118,6 @@ def get_session_stats(user_id: int) -> dict:
             if name:
                 counts[name] += 1
 
-            # Streak: Good or Easy increments, anything else resets
             if review.rating in (3, 4):
                 current_streak += 1
                 if current_streak > max_streak:
@@ -94,14 +125,10 @@ def get_session_stats(user_id: int) -> dict:
             else:
                 current_streak = 0
 
-        # Cards still due
-        cards_due_stmt = (
-            select(func.count())
-            .select_from(ReviewState)
-            .where(ReviewState.user_id == user_id)
-            .where(col(ReviewState.due_date) <= now)
+        cards_due = sum(
+            1 for rs in all_states
+            if _as_utc(rs.due_date) is not None and _as_utc(rs.due_date) <= now
         )
-        cards_due = session.exec(cards_due_stmt).one()
 
         return {
             "total_reviewed": len(reviews),
@@ -109,6 +136,9 @@ def get_session_stats(user_id: int) -> dict:
             "current_streak": current_streak,
             "max_streak": max_streak,
             "cards_due": cards_due,
+            "new_cards": len(new_cards),
+            "learning_cards": len(learning_cards),
+            "review_cards": len(review_cards),
         }
     finally:
-        session.close()
+        db_session.close()

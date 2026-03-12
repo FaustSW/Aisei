@@ -244,3 +244,10 @@ main {
     margin-top: 2px;
     font-weight: 600;
 }
+
+.daily-totals div {
+    font-size: 1.2rem;
+    padding: 8px 16px;
+    border-radius: 8px;
+    background: var(--bg-card);
+}

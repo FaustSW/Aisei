@@ -8,15 +8,11 @@
 
 {% block content %}
 
-<!-- Stats -->
 <div class="stats">
-    <!-- <div>Current Streak: <span id="current-streak">0</span></div> -->
-    <!-- <div>Max Streak: <span id="max-streak">0</span></div> -->
     <a href="{{ url_for('auth.logout') }}" class="stat-btn btn-logout">Log Out</a>
     <a href="{{ url_for('stats.stats') }}" class="stat-btn btn-stats">Stats</a>
 </div>
 
-<!-- Progress Bar (segmented by rating) -->
 <div class="progress-container">
     <div class="progress-bar-segmented">
         <div class="progress-segment segment-again" id="segment-again"></div>
@@ -27,13 +23,23 @@
 </div>
 <div class="progress-text"><span id="cards-reviewed">0</span> / <span id="total-cards">0</span> cards reviewed</div>
 
+<div class="daily-totals" style="display: flex; justify-content: center; gap: 40px; margin-top: 30px; margin-bottom: 10px;">
+    <div style="color: #3498db; font-weight: bold;">
+        New: <span id="total-new">{{ stats.new_cards if stats else 0 }}</span>
+    </div>
+    <div style="color: #f39c12; font-weight: bold;">
+        Learning/Relearning: <span id="total-learning">{{ stats.learning_cards if stats else 0 }}</span>
+    </div>
+    <div style="color: #2ecc71; font-weight: bold;">
+        Review: <span id="total-review">{{ stats.review_cards if stats else 0 }}</span>
+    </div>
+</div>
+
 {% if card %}
-<!-- Flashcards wrapper -->
 <div class="wrapper">
     <div class="card" id="main-card">
         <div class="card-inner" id="card-inner">
 
-            <!-- Front of Card -->
             <div class="card-face card-front">
                 <div class="content-area">
                     <div class="large-text" id="front-text">
@@ -43,6 +49,8 @@
                     <div class="sentence-text" id="front-sentence">
                         {{ card.sentence }}
                     </div>
+                    {% else %}
+                    <div class="sentence-text" id="front-sentence" style="display: none;"></div>
                     {% endif %}
                 </div>
                 <div class="button-row">
@@ -50,7 +58,6 @@
                 </div>
             </div>
 
-            <!-- Back of Card -->
             <div class="card-face card-back">
                 <div class="content-area">
                     <div class="large-text" id="back-text">
@@ -60,13 +67,35 @@
                     <div class="sentence-text" id="back-translation">
                         {{ card.translation }}
                     </div>
+                    {% else %}
+                    <div class="sentence-text" id="back-translation" style="display: none;"></div>
                     {% endif %}
                 </div>
                 <div class="button-row">
-                    <button class="card-btn again" data-action="1">Again</button>
-                    <button class="card-btn hard" data-action="2">Hard</button>
-                    <button class="card-btn good" data-action="3">Good</button>
-                    <button class="card-btn easy" data-action="4">Easy</button>
+                    <button class="card-btn again" data-action="1">
+                        Again
+                        <span class="btn-label" data-rating-label="1">
+                            {{ card.preview_intervals["1"]["label"] if card.preview_intervals else "" }}
+                        </span>
+                    </button>
+                    <button class="card-btn hard" data-action="2">
+                        Hard
+                        <span class="btn-label" data-rating-label="2">
+                            {{ card.preview_intervals["2"]["label"] if card.preview_intervals else "" }}
+                        </span>
+                    </button>
+                    <button class="card-btn good" data-action="3">
+                        Good
+                        <span class="btn-label" data-rating-label="3">
+                            {{ card.preview_intervals["3"]["label"] if card.preview_intervals else "" }}
+                        </span>
+                    </button>
+                    <button class="card-btn easy" data-action="4">
+                        Easy
+                        <span class="btn-label" data-rating-label="4">
+                            {{ card.preview_intervals["4"]["label"] if card.preview_intervals else "" }}
+                        </span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -81,12 +110,26 @@
 </div>
 {% endif %}
 
+<button id="start-sim-time-btn" class="header-btn">Start Simulated Time</button>
+
+<div id="sim-time-controls" style="display:none; margin-top:10px;">
+    <div>
+        Simulated Time: <span id="sim-time-display"></span>
+    </div>
+    <button id="sim-time-plus" class="header-btn">+1 Day</button>
+    <button id="sim-time-minus" class="header-btn">-1 Day</button>
+    <input type="number" id="sim-time-custom" placeholder="Days to add/subtract" style="width:120px;">
+    <button id="sim-time-set" class="header-btn">Set</button>
+    <button id="sim-time-reset" class="header-btn">Reset to Real Time</button>
+</div>
+
 {% endblock %}
 
 {% block extra_js %}
 <script>
     const RATE_URL = "{{ url_for('review.rate_card') }}";
     const CURRENT_REVIEW_STATE_ID = {{ card.review_state_id if card else 'null' }};
+    const INITIAL_PREVIEW_INTERVALS = {{ (card.preview_intervals if card else {}) | tojson }};
     const INITIAL_STATS = {
         total_reviewed: {{ stats.total_reviewed if stats else 0 }},
         counts: {
@@ -101,4 +144,5 @@
     };
 </script>
 <script src="{{ url_for('static', filename='js/card.js') }}"></script>
+<script src="{{ url_for('static', filename='js/sim_time.js') }}"></script>
 {% endblock %}

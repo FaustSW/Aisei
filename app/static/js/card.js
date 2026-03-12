@@ -1,10 +1,6 @@
 // card.js
 
 document.addEventListener('DOMContentLoaded', () => {
-
-    // ======================================================================
-    // 1. ELEMENTS
-    // ======================================================================
     const cardInner = document.getElementById('card-inner');
     const frontText = document.getElementById('front-text');
     const backText = document.getElementById('back-text');
@@ -14,10 +10,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const currentStreakText = document.getElementById('current-streak');
     const maxStreakText = document.getElementById('max-streak');
 
-    // ======================================================================
-    // 2. STATE — initialize from server-provided stats
-    // ======================================================================
     const initial = (typeof INITIAL_STATS !== 'undefined') ? INITIAL_STATS : {};
+    const initialPreviews = (typeof INITIAL_PREVIEW_INTERVALS !== 'undefined') ? INITIAL_PREVIEW_INTERVALS : {};
+
     let reviewStateId = typeof CURRENT_REVIEW_STATE_ID !== 'undefined' ? CURRENT_REVIEW_STATE_ID : null;
     let currentStreak = initial.current_streak || 0;
     let maxStreak = initial.max_streak || 0;
@@ -30,16 +25,12 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     let isFlipping = false;
 
-    const RATING_NAMES = { 1: 'again', 2: 'hard', 3: 'good', 4: 'easy' };
-
-    // Render initial stats on page load
     updateProgressBar();
+    updatePreviewLabels(initialPreviews);
+
     if (currentStreakText) currentStreakText.innerText = currentStreak;
     if (maxStreakText) maxStreakText.innerText = maxStreak;
 
-    // ======================================================================
-    // 3. FLIP LOGIC
-    // ======================================================================
     function flipCard() {
         if (cardInner) cardInner.classList.toggle('is-flipped');
     }
@@ -67,17 +58,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // ======================================================================
-    // 4. RATING LOGIC
-    // ======================================================================
     buttons.forEach((btn) => {
         btn.addEventListener('click', () => {
             if (isFlipping || !reviewStateId) return;
             isFlipping = true;
 
-            const rating = parseInt(btn.dataset.action);
+            const rating = parseInt(btn.dataset.action, 10);
 
-            // POST rating to backend
             fetch(RATE_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -94,38 +81,53 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
 
-                // Sync stats from server (source of truth)
                 if (data.stats) {
                     syncStats(data.stats);
                 }
 
                 if (data.next_card) {
                     flipToFront();
+
                     setTimeout(() => {
-                        frontText.textContent = data.next_card.term;
-                        backText.textContent = data.next_card.english_gloss;
+                        frontText.textContent = data.next_card.term || '';
+                        backText.textContent = data.next_card.english_gloss || '';
 
                         if (frontSentence) {
                             frontSentence.textContent = data.next_card.sentence || '';
                             frontSentence.style.display = data.next_card.sentence ? '' : 'none';
                         }
+
                         if (backTranslation) {
                             backTranslation.textContent = data.next_card.translation || '';
                             backTranslation.style.display = data.next_card.translation ? '' : 'none';
                         }
+
+                        updatePreviewLabels(data.next_card.preview_intervals || {});
+                        enableButtons();
 
                         reviewStateId = data.next_card.review_state_id;
                         isFlipping = false;
                     }, 400);
                 } else {
                     flipToFront();
+
                     setTimeout(() => {
                         frontText.textContent = '🎉 Done!';
                         backText.textContent = 'No more cards due.';
-                        if (frontSentence) frontSentence.style.display = 'none';
-                        if (backTranslation) backTranslation.style.display = 'none';
+
+                        if (frontSentence) {
+                            frontSentence.textContent = '';
+                            frontSentence.style.display = 'none';
+                        }
+
+                        if (backTranslation) {
+                            backTranslation.textContent = '';
+                            backTranslation.style.display = 'none';
+                        }
+
+                        updatePreviewLabels({});
                         reviewStateId = null;
-                        buttons.forEach(b => b.disabled = true);
+                        disableButtons();
                         isFlipping = false;
                     }, 400);
                 }
@@ -137,9 +139,25 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // ======================================================================
-    // 5. SYNC STATS FROM SERVER
-    // ======================================================================
+    function updatePreviewLabels(previews) {
+        document.querySelectorAll('[data-rating-label]').forEach((el) => {
+            const rating = el.dataset.ratingLabel;
+            el.textContent = (previews && previews[rating] && previews[rating].label) ? previews[rating].label : '';
+        });
+    }
+
+    function disableButtons() {
+        buttons.forEach((b) => {
+            b.disabled = true;
+        });
+    }
+
+    function enableButtons() {
+        buttons.forEach((b) => {
+            b.disabled = false;
+        });
+    }
+
     function syncStats(stats) {
         totalReviewed = stats.total_reviewed || 0;
         currentStreak = stats.current_streak || 0;
@@ -153,26 +171,43 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (currentStreakText) currentStreakText.innerText = currentStreak;
         if (maxStreakText) maxStreakText.innerText = maxStreak;
+
         updateProgressBar();
+
+        const totalNew = document.getElementById('total-new');
+        const totalLearning = document.getElementById('total-learning');
+        const totalReview = document.getElementById('total-review');
+
+        if (totalNew) totalNew.innerText = stats.new_cards || 0;
+        if (totalLearning) totalLearning.innerText = stats.learning_cards || 0;
+        if (totalReview) totalReview.innerText = stats.review_cards || 0;
     }
 
-    // ======================================================================
-    // 6. PROGRESS BAR
-    // ======================================================================
     function updateProgressBar() {
-        const total = Math.max(totalReviewed, 1);
-        const segAgain = document.getElementById('segment-again');
-        const segHard = document.getElementById('segment-hard');
-        const segGood = document.getElementById('segment-good');
-        const segEasy = document.getElementById('segment-easy');
-        const cardsReviewed = document.getElementById('cards-reviewed');
-        const totalCards = document.getElementById('total-cards');
+        const totalCards = totalReviewed;
+        const cardsReviewedEl = document.getElementById('cards-reviewed');
+        const totalCardsEl = document.getElementById('total-cards');
 
-        if (segAgain) segAgain.style.width = (reviewCounts.again / total) * 100 + '%';
-        if (segHard) segHard.style.width = (reviewCounts.hard / total) * 100 + '%';
-        if (segGood) segGood.style.width = (reviewCounts.good / total) * 100 + '%';
-        if (segEasy) segEasy.style.width = (reviewCounts.easy / total) * 100 + '%';
-        if (cardsReviewed) cardsReviewed.innerText = totalReviewed;
-        if (totalCards) totalCards.innerText = totalReviewed;
+        if (cardsReviewedEl) cardsReviewedEl.innerText = totalReviewed;
+        if (totalCardsEl) totalCardsEl.innerText = totalCards;
+
+        const again = reviewCounts.again || 0;
+        const hard = reviewCounts.hard || 0;
+        const good = reviewCounts.good || 0;
+        const easy = reviewCounts.easy || 0;
+
+        const segments = {
+            again: document.getElementById('segment-again'),
+            hard: document.getElementById('segment-hard'),
+            good: document.getElementById('segment-good'),
+            easy: document.getElementById('segment-easy'),
+        };
+
+        const safeTotal = Math.max(again + hard + good + easy, 1);
+
+        if (segments.again) segments.again.style.width = `${(again / safeTotal) * 100}%`;
+        if (segments.hard) segments.hard.style.width = `${(hard / safeTotal) * 100}%`;
+        if (segments.good) segments.good.style.width = `${(good / safeTotal) * 100}%`;
+        if (segments.easy) segments.easy.style.width = `${(easy / safeTotal) * 100}%`;
     }
 });
