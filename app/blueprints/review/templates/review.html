@@ -1,3 +1,5 @@
+{# app/blueprints/review/templates/review.html #}
+
 {% extends "base.html" %}
 
 {% block title %}Card Interface{% endblock %}
@@ -138,8 +140,6 @@
             good: {{ stats.counts.good if stats else 0 }},
             easy: {{ stats.counts.easy if stats else 0 }}
         },
-        current_streak: {{ stats.current_streak if stats else 0 }},
-        max_streak: {{ stats.max_streak if stats else 0 }},
         cards_due: {{ stats.cards_due if stats else 0 }}
     };
 </script>

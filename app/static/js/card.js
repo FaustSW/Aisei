@@ -1,4 +1,4 @@
-// card.js
+// app/static/js/card.js
 
 document.addEventListener('DOMContentLoaded', () => {
     const cardInner = document.getElementById('card-inner');
@@ -7,15 +7,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const frontSentence = document.getElementById('front-sentence');
     const backTranslation = document.getElementById('back-translation');
     const buttons = document.querySelectorAll('.card-btn');
-    const currentStreakText = document.getElementById('current-streak');
-    const maxStreakText = document.getElementById('max-streak');
 
     const initial = (typeof INITIAL_STATS !== 'undefined') ? INITIAL_STATS : {};
     const initialPreviews = (typeof INITIAL_PREVIEW_INTERVALS !== 'undefined') ? INITIAL_PREVIEW_INTERVALS : {};
 
     let reviewStateId = typeof CURRENT_REVIEW_STATE_ID !== 'undefined' ? CURRENT_REVIEW_STATE_ID : null;
-    let currentStreak = initial.current_streak || 0;
-    let maxStreak = initial.max_streak || 0;
     let totalReviewed = initial.total_reviewed || 0;
     let reviewCounts = {
         again: (initial.counts && initial.counts.again) || 0,
@@ -28,15 +24,52 @@ document.addEventListener('DOMContentLoaded', () => {
     updateProgressBar();
     updatePreviewLabels(initialPreviews);
 
-    if (currentStreakText) currentStreakText.innerText = currentStreak;
-    if (maxStreakText) maxStreakText.innerText = maxStreak;
-
     function flipCard() {
         if (cardInner) cardInner.classList.toggle('is-flipped');
     }
 
     function flipToFront() {
         if (cardInner) cardInner.classList.remove('is-flipped');
+    }
+
+    function setCardContent(nextCard) {
+        if (frontText) {
+            frontText.textContent = nextCard.term || '';
+        }
+
+        if (backText) {
+            backText.textContent = nextCard.english_gloss || '';
+        }
+
+        if (frontSentence) {
+            frontSentence.textContent = nextCard.sentence || '';
+            frontSentence.style.display = nextCard.sentence ? '' : 'none';
+        }
+
+        if (backTranslation) {
+            backTranslation.textContent = nextCard.translation || '';
+            backTranslation.style.display = nextCard.translation ? '' : 'none';
+        }
+    }
+
+    function setDoneState() {
+        if (frontText) {
+            frontText.textContent = '🎉 Done!';
+        }
+
+        if (backText) {
+            backText.textContent = 'No more cards due.';
+        }
+
+        if (frontSentence) {
+            frontSentence.textContent = '';
+            frontSentence.style.display = 'none';
+        }
+
+        if (backTranslation) {
+            backTranslation.textContent = '';
+            backTranslation.style.display = 'none';
+        }
     }
 
     window.addEventListener('keydown', (e) => {
@@ -49,9 +82,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (cardInner) {
         cardInner.addEventListener('click', (e) => {
             if (e.target.closest('.card-btn')) return;
+
             const rect = cardInner.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const cardWidth = rect.width;
+
             if (x < cardWidth * 0.2 || x > cardWidth * 0.8) {
                 flipCard();
             }
@@ -85,92 +120,60 @@ document.addEventListener('DOMContentLoaded', () => {
                     syncStats(data.stats);
                 }
 
-                if (data.next_card) {
-                    flipToFront();
+                flipToFront();
 
-                    setTimeout(() => {
-                        frontText.textContent = data.next_card.term || '';
-                        backText.textContent = data.next_card.english_gloss || '';
-
-                        if (frontSentence) {
-                            frontSentence.textContent = data.next_card.sentence || '';
-                            frontSentence.style.display = data.next_card.sentence ? '' : 'none';
-                        }
-
-                        if (backTranslation) {
-                            backTranslation.textContent = data.next_card.translation || '';
-                            backTranslation.style.display = data.next_card.translation ? '' : 'none';
-                        }
-
+                setTimeout(() => {
+                    if (data.next_card) {
+                        setCardContent(data.next_card);
                         updatePreviewLabels(data.next_card.preview_intervals || {});
                         enableButtons();
-
                         reviewStateId = data.next_card.review_state_id;
-                        isFlipping = false;
-                    }, 400);
-                } else {
-                    flipToFront();
-
-                    setTimeout(() => {
-                        frontText.textContent = '🎉 Done!';
-                        backText.textContent = 'No more cards due.';
-
-                        if (frontSentence) {
-                            frontSentence.textContent = '';
-                            frontSentence.style.display = 'none';
-                        }
-
-                        if (backTranslation) {
-                            backTranslation.textContent = '';
-                            backTranslation.style.display = 'none';
-                        }
-
+                    } else {
+                        setDoneState();
                         updatePreviewLabels({});
-                        reviewStateId = null;
                         disableButtons();
-                        isFlipping = false;
-                    }, 400);
-                }
+                        reviewStateId = null;
+                    }
+
+                    isFlipping = false;
+                }, 400);
             })
             .catch(err => {
-                console.error('Card fetch error:', err);
+                console.error('Request failed:', err);
                 isFlipping = false;
             });
         });
     });
 
-    function updatePreviewLabels(previews) {
-        document.querySelectorAll('[data-rating-label]').forEach((el) => {
-            const rating = el.dataset.ratingLabel;
-            el.textContent = (previews && previews[rating] && previews[rating].label) ? previews[rating].label : '';
-        });
-    }
-
     function disableButtons() {
-        buttons.forEach((b) => {
-            b.disabled = true;
+        buttons.forEach(btn => {
+            btn.disabled = true;
+            btn.classList.add('disabled');
         });
     }
 
     function enableButtons() {
-        buttons.forEach((b) => {
-            b.disabled = false;
+        buttons.forEach(btn => {
+            btn.disabled = false;
+            btn.classList.remove('disabled');
+        });
+    }
+
+    function updatePreviewLabels(previews) {
+        document.querySelectorAll('[data-rating-label]').forEach((el) => {
+            const rating = el.dataset.ratingLabel;
+            el.textContent = (previews[rating] && previews[rating].label) || '';
         });
     }
 
     function syncStats(stats) {
         totalReviewed = stats.total_reviewed || 0;
-        currentStreak = stats.current_streak || 0;
-        maxStreak = stats.max_streak || 0;
         reviewCounts = {
             again: (stats.counts && stats.counts.again) || 0,
             hard:  (stats.counts && stats.counts.hard)  || 0,
             good:  (stats.counts && stats.counts.good)  || 0,
             easy:  (stats.counts && stats.counts.easy)  || 0,
         };
-
-        if (currentStreakText) currentStreakText.innerText = currentStreak;
-        if (maxStreakText) maxStreakText.innerText = maxStreak;
 
         updateProgressBar();
 

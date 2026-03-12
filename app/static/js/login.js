@@ -6,7 +6,6 @@ let selectedProfile = null;
 /* ============================================================================================================== */
 
 function loadProfiles() {
-  // Profiles are injected into the page by the backend template
   if (typeof PROFILES_FROM_DB !== "undefined") {
     profiles = PROFILES_FROM_DB;
   }
@@ -27,11 +26,11 @@ function renderProfiles() {
     profileCard.onclick = (event) => selectProfile(profile, event);
 
     profileCard.innerHTML = `
-                    <button class="remove-btn" onclick="removeProfile(event, ${profile.id})">×</button>
-                    <div class="profile-avatar ${profile.avatar}">${profile.initials}</div>
-                    <div class="profile-name">${profile.name}</div>
-                    <div class="profile-username">@${profile.username}</div>
-                `;
+      <button class="remove-btn" onclick="removeProfile(event, ${profile.id})">×</button>
+      <div class="profile-avatar ${profile.avatar}">${profile.initials}</div>
+      <div class="profile-name">${profile.name}</div>
+      <div class="profile-username">@${profile.username}</div>
+    `;
 
     grid.appendChild(profileCard);
   });
@@ -100,7 +99,7 @@ function removeProfile(event, profileId) {
 }
 
 /* ============================================================================================================== */
-/* CHECK PASSWORD & LOGIN */
+/* LOGIN */
 /* ============================================================================================================== */
 
 function handleLogin() {
@@ -111,39 +110,30 @@ function handleLogin() {
 
   const password = document.getElementById("passwordInput").value;
 
-  // Check if password matches
-  if (password === selectedProfile.password) {
-    // Password is CORRECT
-    document.getElementById("passwordError").classList.remove("show");
-    showMessage(`✅ Welcome, ${selectedProfile.name}!`, "success");
-
-    // POST to backend to set session
-    fetch("/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username: selectedProfile.username }),
+  fetch("/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      username: selectedProfile.username,
+      password: password,
+    }),
+  })
+    .then((res) => res.json())
+    .then((data) => {
+      if (data.ok) {
+        document.getElementById("passwordError").classList.remove("show");
+        showMessage(`✅ Welcome, ${selectedProfile.name}!`, "success");
+        window.location.href = "/go_to_review";
+      } else {
+        document.getElementById("passwordError").classList.add("show");
+        document.getElementById("passwordInput").value = "";
+        document.getElementById("passwordInput").focus();
+      }
     })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.ok) {
-          window.location.href = "/go_to_review";
-        } else {
-          showMessage(
-            "Error logging in: " + (data.error || "unknown"),
-            "error",
-          );
-        }
-      })
-      .catch((error) => {
-        console.error("Error:", error);
-        showMessage("Error logging in", "error");
-      });
-  } else {
-    // Password is WRONG
-    document.getElementById("passwordError").classList.add("show");
-    document.getElementById("passwordInput").value = "";
-    document.getElementById("passwordInput").focus();
-  }
+    .catch((error) => {
+      console.error("Error:", error);
+      showMessage("Error logging in", "error");
+    });
 }
 
 function showMessage(text, type) {
@@ -185,7 +175,6 @@ document
 
     const avatarClass = `avatar-${(profiles.length % 5) + 1}`;
 
-    // POST to backend to create user in DB
     fetch("/create_user", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -214,10 +203,9 @@ document
   });
 
 /* ============================================================================================================== */
-/* EXTRA - for extra functions */
+/* EXTRA */
 /* ============================================================================================================== */
 
-// Close pop-up when clicking outside of it
 window.onclick = function (event) {
   const modal = document.getElementById("addProfileModal");
   if (event.target === modal) {
@@ -225,7 +213,6 @@ window.onclick = function (event) {
   }
 };
 
-// Press Enter key to login instead of clicking button
 document
   .getElementById("passwordInput")
   .addEventListener("keypress", function (e) {
@@ -234,5 +221,4 @@ document
     }
   });
 
-// Load all profiles when page first opens
 loadProfiles();

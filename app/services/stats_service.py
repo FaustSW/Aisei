@@ -1,3 +1,5 @@
+# app/services/stats_service.py
+
 """
 stats_service.py
 
@@ -27,7 +29,7 @@ from sqlmodel import select, col
 from app.db import get_session
 from app.models.review_log import ReviewLog
 from app.models.review_state import ReviewState
-from app.services.queue_utils import get_queue_bucket
+from app.services.queue_service import get_queue_bucket
 
 
 def get_simulated_now() -> datetime:
@@ -81,23 +83,23 @@ def get_session_stats(user_id: int) -> dict:
             select(ReviewState).where(ReviewState.user_id == user_id)
         ).all()
 
-        due_today_states = [
-            rs for rs in all_states
-            if _as_utc(rs.due_date) is not None and _as_utc(rs.due_date) <= today_end
-        ]
+        due_today_states = []
+        cards_due = 0
 
-        new_cards = [
-            rs for rs in due_today_states
-            if get_queue_bucket(rs) == "new"
-        ]
-        learning_cards = [
-            rs for rs in due_today_states
-            if get_queue_bucket(rs) == "learning"
-        ]
-        review_cards = [
-            rs for rs in due_today_states
-            if get_queue_bucket(rs) == "review"
-        ]
+        for rs in all_states:
+            due = _as_utc(rs.due_date)
+            if due is None:
+                continue
+
+            if due <= today_end:
+                due_today_states.append(rs)
+
+            if due <= now:
+                cards_due += 1
+
+        new_cards = [rs for rs in due_today_states if get_queue_bucket(rs) == "new"]
+        learning_cards = [rs for rs in due_today_states if get_queue_bucket(rs) == "learning"]
+        review_cards = [rs for rs in due_today_states if get_queue_bucket(rs) == "review"]
 
         reviews = db_session.exec(
             select(ReviewLog)
@@ -124,11 +126,6 @@ def get_session_stats(user_id: int) -> dict:
                     max_streak = current_streak
             else:
                 current_streak = 0
-
-        cards_due = sum(
-            1 for rs in all_states
-            if _as_utc(rs.due_date) is not None and _as_utc(rs.due_date) <= now
-        )
 
         return {
             "total_reviewed": len(reviews),
