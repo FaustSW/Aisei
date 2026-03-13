@@ -1,5 +1,3 @@
-# app/services/queue_service.py
-
 """
 queue_service.py
 
@@ -202,6 +200,8 @@ def build_static_daily_queue(
     )
     first_new_day = today_date
 
+    # New cards are treated as "today". If the earliest review card is due
+    # today or earlier, start the interleave on the review side (reviews win ties).
     start_with_review = first_review_day <= first_new_day
 
     queue: list[ReviewState] = []

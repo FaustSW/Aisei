@@ -4,9 +4,9 @@ db.py
 Single source of truth for database connectivity.
 
 Three things live here:
-    engine      — the shared SQLModel engine (connects to SQLite)
-    get_session — returns a new database session
-    init_db     — creates all tables
+    engine      - the shared SQLModel engine (connects to SQLite)
+    get_session - returns a new database session
+    init_db     - creates all tables
 
 Everything that touches the database (blueprints, services, scripts)
 imports from here. Do not call create_engine() anywhere else.
@@ -42,7 +42,7 @@ def init_db():
 
     Models must be imported before calling create_all so that
     SQLModel registers their table definitions in metadata.
-    Safe to call multiple times — existing tables are not recreated.
+    Safe to call multiple times; existing tables are not recreated.
     """
     # These imports look unused, but they're required.
     # SQLModel only knows about a table if the model class has been

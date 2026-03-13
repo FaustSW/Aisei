@@ -4,23 +4,24 @@ Database Model: GeneratedCard
 A single generated display artifact for a ReviewState.
 
 Stores the sentence, translation, and audio path that the user
-sees during review. Created by seed_db for initial content;
-will be created by generation_service once AI integration is wired.
+sees during review. Demo seed scripts may create initial GeneratedCard
+rows; generation_service is intended to create them dynamically once
+AI integration is wired.
 
 A ReviewState can have many GeneratedCards over its lifetime
 (one per regeneration cycle). The active one is tracked via
 ReviewState.current_generated_card_id.
 
 Fields:
-    id                     — primary key
-    review_state_id        — foreign key to the parent ReviewState
-    term_snapshot          — Spanish term at the time of generation
-    english_gloss_snapshot — English meaning at the time of generation
-    sentence               — generated Spanish example sentence (nullable)
-    translation            — English translation of the sentence (nullable)
-    tts_audio_path         — file path to generated TTS audio (nullable)
-    generation_number      — which generation cycle produced this card (1-based)
-    created_at             — when this card was generated (UTC)
+    id                     - primary key
+    review_state_id        - foreign key to the parent ReviewState
+    term_snapshot          - Spanish term at the time of generation
+    english_gloss_snapshot - English meaning at the time of generation
+    sentence               - generated Spanish example sentence (nullable)
+    translation            - English translation of the sentence (nullable)
+    tts_audio_path         - file path to generated TTS audio (nullable)
+    generation_number      - which generation cycle produced this card (1-based)
+    created_at             - when this card was generated (UTC)
 """
 
 from __future__ import annotations

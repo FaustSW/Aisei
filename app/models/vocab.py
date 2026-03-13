@@ -2,13 +2,13 @@
 Database Model: Vocab
 
 A single Spanish vocabulary item from the seeded dataset.
-This is global content — shared across all users, not user-specific.
+This is global content - shared across all users, not user-specific.
 
 Fields:
-    id           — primary key
-    term         — Spanish word or phrase (e.g., "ser"), unique
-    english_gloss — short English meaning (e.g., "to be")
-    intro_index  — position in the learning sequence, unique
+    id            - primary key
+    term          - Spanish word or phrase (e.g., "ser"), unique
+    english_gloss - short English meaning (e.g., "to be")
+    intro_index   - position in the learning sequence, unique
 
 User-specific learning state lives in ReviewState, not here.
 Table name is "vocab" to match ReviewState's foreign_key="vocab.id".

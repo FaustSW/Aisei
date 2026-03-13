@@ -4,12 +4,12 @@ Database Model: User
 A registered account in the system.
 
 Fields:
-    id            — primary key
-    username      — unique login/display name
-    display_name  — friendly name shown on profile badge
-    password_hash — hashed password (hashing logic lives in auth service, not here)
-    avatar        — CSS class for avatar color (e.g. "avatar-1")
-    created_at    — account creation timestamp (UTC)
+    id            - primary key
+    username      - unique login/display name
+    display_name  - friendly name shown on profile badge
+    password_hash - password storage field (currently plaintext; hashing planned)
+    avatar        - CSS class for avatar color (e.g. "avatar-1")
+    created_at    - account creation timestamp (UTC)
 
 This model only stores identity and auth data.
 Learning state is tracked per-user through ReviewState records.

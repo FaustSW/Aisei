@@ -1,15 +1,19 @@
 """
 Statistics Blueprint
 
-Handles progress and performance endpoints.
-Stats are computed by stats_service; this blueprint only
-requests and presents them.
+Handles the stats page route.
+
+Current behavior:
+- Renders the stats template placeholder.
+
+Future behavior:
+- Will request computed metrics from stats_service and present them.
 
 Routes:
-    GET /stats/stats — render the stats page
+    GET /stats/stats - render the stats page
 """
 
-from flask import Blueprint, render_template, request, jsonify
+from flask import Blueprint, render_template
 
 stats_bp = Blueprint('stats', __name__, template_folder='templates')
 

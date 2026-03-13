@@ -12,7 +12,6 @@ registered with the main Flask application in the app factory.
 Blueprints are responsible for:
 - Reading request data (form fields, JSON bodies, query params).
 - Managing Flask user/session state.
-- Opening and closing database Sessions via app.db.
 - Calling service-layer functions to perform business logic.
 - Returning rendered templates or JSON responses.
 

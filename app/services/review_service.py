@@ -1,5 +1,3 @@
-# app/services/review_service.py
-
 """
 review_service.py
 
@@ -12,12 +10,6 @@ Primary responsibilities:
     - Update ReviewState scheduling fields via scheduler_adapter.
     - Update app-owned counters on ReviewState (repetitions, lapses, streak).
     - Log review events to ReviewLog.
-
-Architectural position:
-    Blueprint (review routes) → review_service → scheduler_adapter (SM-2)
-                                               → queue_service (card selection)
-                                               → models (ReviewState, Vocab, ReviewLog)
-                                               → generation_service (future, for AI sentences)
 """
 
 from __future__ import annotations
@@ -53,6 +45,9 @@ def _build_card_payload(db_session, review_state: ReviewState) -> dict:
     translation = None
     audio_path = None
 
+    # Some ReviewStates will not have an active GeneratedCard yet
+    # (for example, seeded/non-generation flows), so these fields
+    # intentionally remain None in that case.
     if review_state.current_generated_card_id is not None:
         generated_card = db_session.get(
             GeneratedCard,

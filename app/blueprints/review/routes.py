@@ -5,12 +5,12 @@ Handles the interactive review experience and simulated time controls.
 Card selection and scheduling are delegated to review_service.
 
 Routes:
-    GET  /review/                load the review page with the next due card
-    POST /review/rate            process a rating and return next card + stats
-    POST /review/start_sim_time  enable simulated time at current UTC
-    POST /review/adjust_sim_time shift simulated time by a day delta
-    POST /review/reset_sim_time  disable simulated time, return to real time
-    GET  /review/check_sim_time  report whether simulated time is active
+    GET  /review/                - load the review page with the next due card
+    POST /review/rate            - process a rating and return next card + stats
+    POST /review/start_sim_time  - enable simulated time at current UTC
+    POST /review/adjust_sim_time - shift simulated time by a day delta
+    POST /review/reset_sim_time  - disable simulated time, return to real time
+    GET  /review/check_sim_time  - report whether simulated time is active
 """
 
 from datetime import datetime, timezone, timedelta

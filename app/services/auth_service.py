@@ -1,5 +1,3 @@
-# app/services/auth_service.py
-
 """
 auth_service.py
 
@@ -9,12 +7,7 @@ Responsibilities:
 - Load login profile metadata for the frontend
 - Validate username/password pairs
 - Create new users and seed their initial ReviewState rows
-- Delete users and their review data
-
-It SHOULD NOT:
-- Handle HTTP requests or Flask routing (auth blueprint handles that).
-- Implement scheduling or review logic (review_service handles that).
-- Contain password hashing (planned, not yet implemented).
+- Delete users and all user-owned review data
 
 Future expansion:
 - Replace plaintext passwords with hashing + verification
@@ -26,6 +19,8 @@ from __future__ import annotations
 from sqlmodel import select
 
 from app.db import get_session
+from app.models.generated_card import GeneratedCard
+from app.models.review_log import ReviewLog
 from app.models.review_state import ReviewState
 from app.models.user import User
 from app.models.vocab import Vocab
@@ -127,14 +122,42 @@ def create_user(
 
 
 def delete_user(user_id: int) -> None:
-    """Remove a user and all of their ReviewState rows."""
+    """
+    Delete a user and all user-owned review data.
+
+    Deletion order matters:
+    - ReviewLog rows first (they reference both User and ReviewState)
+    - GeneratedCard rows next (they reference ReviewState)
+    - ReviewState rows next
+    - User row last
+    """
     db = get_session()
     try:
         user = db.get(User, user_id)
         if user is None:
             raise ValueError("User not found")
 
-        states = db.exec(select(ReviewState).where(ReviewState.user_id == user_id)).all()
+        states = db.exec(
+            select(ReviewState).where(ReviewState.user_id == user_id)
+        ).all()
+        
+        # Collect ReviewState IDs first so GeneratedCard rows can be deleted
+        # before their parent ReviewState rows are removed.
+        state_ids = [rs.id for rs in states if rs.id is not None]
+
+        logs = db.exec(
+            select(ReviewLog).where(ReviewLog.user_id == user_id)
+        ).all()
+        for log in logs:
+            db.delete(log)
+
+        if state_ids:
+            generated_cards = db.exec(
+                select(GeneratedCard).where(GeneratedCard.review_state_id.in_(state_ids))
+            ).all()
+            for generated_card in generated_cards:
+                db.delete(generated_card)
+
         for rs in states:
             db.delete(rs)
 

@@ -2,21 +2,14 @@
 scheduler_adapter.py
 
 Translation layer between our ReviewState model and the anki-sm-2 library.
-
-Architecture:
-    review_service -> scheduler_adapter -> SM-2 library (black box)
+The rest of the app treats the scheduler library as a black box and
+communicates with it only through this adapter.
 
 Responsibilities:
     - Translate ReviewState scheduling fields <-> SM2Card
     - Pass ratings through the scheduler
     - Apply updated SM-2 values back onto ReviewState (mutate in place)
     - Preview the next interval / due timing for each rating option
-
-Important note:
-The anki-sm-2 library has no separate "New" state. New cards begin in
-State.Learning with step 0. We therefore treat the library's state as
-scheduler-owned internal data and infer user-facing queue buckets
-elsewhere (in queue_service) from repetitions + interval.
 """
 
 from __future__ import annotations
@@ -35,6 +28,7 @@ from app.models.review_state import ReviewState
 
 
 class SchedulerAdapter:
+    # Maps app/frontend rating integers to the anki-sm-2 library's Rating enum.
     RATING_MAP = {
         1: SM2Rating.Again,
         2: SM2Rating.Hard,

@@ -9,21 +9,6 @@ Current responsibilities:
 - Count unique cards reviewed today
 - Compute current / max streak for today
 - Count cards due right now
-
-Important queue note:
-For the New / Learning / Review display on the review page, we count cards
-due by the end of the current simulated day. This is closer to how Anki-style
-queue counts are usually presented than counting only cards due at this exact second.
-
-It SHOULD NOT:
-- Handle HTTP requests, sessions, or template rendering.
-- Perform scheduling updates or review workflow logic (review_service handles that).
-- Call external APIs or trigger content generation.
-
-Architectural Position:
-
-Blueprint (review / stats endpoints) → stats_service → models (ReviewState, ReviewLog)
-                                                      → queue_service (bucket classification, time helpers)
 """
 
 from __future__ import annotations

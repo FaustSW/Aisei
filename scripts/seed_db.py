@@ -7,7 +7,7 @@ Populates the database with:
     3. ReviewStates for every (user, vocab) pair
     4. GeneratedCards with seed sentences for every ReviewState
 
-Safe to run multiple times — skips anything that already exists.
+Safe to run multiple times - skips anything that already exists.
 
 Usage:
     python -m scripts.seed_db

@@ -1,5 +1,3 @@
-# app/blueprints/auth/routes.py
-
 """
 Authentication Blueprint
 
@@ -7,12 +5,12 @@ Handles user authentication and profile management endpoints.
 All business logic is delegated to auth_service.
 
 Routes:
-    GET  /             — render login page with profiles from DB
-    POST /login        — authenticate user, set session
-    POST /create_user  — create new user, seed review states, return profile
-    POST /delete_user  — remove user and their data
-    GET  /go_to_review — redirect to review page (requires session)
-    GET  /logout       — clear session, redirect to login
+    GET  /             - render login page with profiles from DB
+    POST /login        - authenticate user, set session
+    POST /create_user  - create new user, seed review states, return profile
+    POST /delete_user  - remove user and all user-owned review data
+    GET  /go_to_review - redirect to review page (requires session)
+    GET  /logout       - clear session, redirect to login
 """
 import json
 
@@ -78,7 +76,7 @@ def create_user():
 
 @auth_bp.route("/delete_user", methods=["POST"])
 def delete_user():
-    """Remove a user and all their review states."""
+    """Remove a user and all user-owned review data."""
     data = request.get_json(force=True)
     user_id = data.get("user_id")
 

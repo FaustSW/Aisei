@@ -4,15 +4,15 @@ Database Model: ReviewLog
 A single review event, recorded for stats and auditing.
 
 Fields:
-    id              — primary key
-    user_id         — foreign key to User
-    review_state_id — foreign key to ReviewState
-    vocab_id        — foreign key to Vocab (denormalized for easier stats queries)
-    rating          — user rating value (1=Again, 2=Hard, 3=Good, 4=Easy)
-    reviewed_at     — timestamp of when the review happened (UTC)
+    id              - primary key
+    user_id         - foreign key to User
+    review_state_id - foreign key to ReviewState
+    vocab_id        - foreign key to Vocab (denormalized for easier stats queries)
+    rating          - user rating value (1=Again, 2=Hard, 3=Good, 4=Easy)
+    reviewed_at     - timestamp of when the review happened (UTC)
 
 This table does not affect scheduling. The scheduler only reads/writes
-the ReviewState model. ReviewLog is append-only — review_service creates
+the ReviewState model. ReviewLog is append-only - review_service creates
 entries, stats_service reads them for metrics.
 """
 

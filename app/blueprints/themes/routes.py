@@ -4,9 +4,9 @@ Themes Blueprint
 Serves theme data so the frontend can switch color schemes.
 
 Routes:
-    GET  /api/themes         — list all available themes
-    GET  /api/theme/<id>     — get a single theme's CSS class
-    POST /api/save-theme     — acknowledge a theme choice (no DB persistence yet)
+    GET  /api/themes       - list all available themes
+    GET  /api/theme/<id>   - get a single theme object (name + class)
+    POST /api/save-theme   - acknowledge a theme choice (no DB persistence yet)
 
 Theme definitions live in themes.json next to this file.
 """
