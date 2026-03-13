@@ -4,14 +4,23 @@ Database Model: GeneratedCard
 A single generated display artifact for a ReviewState.
 
 Stores the sentence, translation, and audio path that the user
-sees during review. Created by generation_service (future).
+sees during review. Created by seed_db for initial content;
+will be created by generation_service once AI integration is wired.
 
 A ReviewState can have many GeneratedCards over its lifetime
-(one per regeneration). The active one is tracked via
+(one per regeneration cycle). The active one is tracked via
 ReviewState.current_generated_card_id.
 
-For now: table exists, fields defined, no generation logic wired.
-Generation service will populate this when AI integration is ready.
+Fields:
+    id                     — primary key
+    review_state_id        — foreign key to the parent ReviewState
+    term_snapshot          — Spanish term at the time of generation
+    english_gloss_snapshot — English meaning at the time of generation
+    sentence               — generated Spanish example sentence (nullable)
+    translation            — English translation of the sentence (nullable)
+    tts_audio_path         — file path to generated TTS audio (nullable)
+    generation_number      — which generation cycle produced this card (1-based)
+    created_at             — when this card was generated (UTC)
 """
 
 from __future__ import annotations
@@ -23,10 +32,17 @@ from sqlmodel import SQLModel, Field
 
 
 def utcnow() -> datetime:
+    """Return the current time in UTC with timezone info attached."""
     return datetime.now(timezone.utc)
 
 
 class GeneratedCard(SQLModel, table=True):
+    """
+    One generated sentence/translation/audio bundle.
+
+    Linked to a ReviewState. The ReviewState's current_generated_card_id
+    field determines which GeneratedCard is shown during reviews.
+    """
 
     __tablename__ = "generated_card"
 

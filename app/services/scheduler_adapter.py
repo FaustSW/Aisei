@@ -15,8 +15,8 @@ Responsibilities:
 Important note:
 The anki-sm-2 library has no separate "New" state. New cards begin in
 State.Learning with step 0. We therefore treat the library's state as
-scheduler-owned internal data and infer user-facing queue buckets elsewhere
-from repetitions + interval.
+scheduler-owned internal data and infer user-facing queue buckets
+elsewhere (in queue_service) from repetitions + interval.
 """
 
 from __future__ import annotations
@@ -43,6 +43,7 @@ class SchedulerAdapter:
     }
 
     def __init__(self) -> None:
+        """Create a single shared SM-2 scheduler instance with Anki default config."""
         self._scheduler = SM2Scheduler()
 
     def initialize_new_card(self, card: ReviewState) -> ReviewState:
@@ -142,6 +143,9 @@ class SchedulerAdapter:
     def _write_sm2_to_card(self, sm2_card: SM2Card, card: ReviewState) -> None:
         """
         SM2Card -> ReviewState scheduler-owned fields (mutates in place).
+
+        Only touches the 5 scheduler-owned fields. Does NOT touch
+        app-owned counters (repetitions, lapses, success_streak).
         """
         card.scheduler_state = int(sm2_card.state.value)
         card.learning_step = sm2_card.step
@@ -181,6 +185,7 @@ class SchedulerAdapter:
 
     @staticmethod
     def _format_days(days: int) -> str:
+        """Format a day count as 'd', 'mo', or 'y' for the rating button labels."""
         if days < 30:
             return f"{days}d"
         if days < 365:
@@ -191,6 +196,13 @@ class SchedulerAdapter:
 
     @staticmethod
     def _ensure_utc(dt: datetime | None) -> datetime:
+        """
+        Guarantee a timezone-aware UTC datetime.
+
+        Returns now(UTC) if None, stamps naive datetimes as UTC,
+        and converts aware datetimes to UTC. Prevents silent
+        miscalculation of intervals and due dates.
+        """
         if dt is None:
             return datetime.now(timezone.utc)
         if dt.tzinfo is None:

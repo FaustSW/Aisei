@@ -1,3 +1,15 @@
+"""
+app.py
+
+Flask application entrypoint.
+
+Creates the Flask app instance, registers all blueprints, and
+sets configuration (secret key, template/static paths).
+
+Run directly with `python app.py` for development, or use
+`run_demo.py` for a full wipe-and-seed demo launch.
+"""
+
 from flask import Flask, jsonify
 from app.blueprints.auth import auth_bp
 from app.blueprints.review import review_bp

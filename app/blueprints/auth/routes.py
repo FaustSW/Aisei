@@ -3,14 +3,16 @@
 """
 Authentication Blueprint
 
-Handles user authentication endpoints.
+Handles user authentication and profile management endpoints.
+All business logic is delegated to auth_service.
 
 Routes:
     GET  /             — render login page with profiles from DB
     POST /login        — authenticate user, set session
-    POST /create_user  — create new user in DB, seed review states
+    POST /create_user  — create new user, seed review states, return profile
     POST /delete_user  — remove user and their data
-    GET  /go_to_review — redirect to review page
+    GET  /go_to_review — redirect to review page (requires session)
+    GET  /logout       — clear session, redirect to login
 """
 import json
 
