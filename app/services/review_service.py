@@ -6,12 +6,18 @@ review_service.py
 Owns the end-to-end review workflow for a user.
 
 Primary responsibilities:
-    - Select the next card for the user to review.
+    - Select the next card for the user to review (via queue_service).
     - Build a display-ready payload for the template / frontend.
     - Process submitted ratings (Again / Hard / Good / Easy).
     - Update ReviewState scheduling fields via scheduler_adapter.
-    - Update app-owned counters on ReviewState.
+    - Update app-owned counters on ReviewState (repetitions, lapses, streak).
     - Log review events to ReviewLog.
+
+Architectural position:
+    Blueprint (review routes) → review_service → scheduler_adapter (SM-2)
+                                               → queue_service (card selection)
+                                               → models (ReviewState, Vocab, ReviewLog)
+                                               → generation_service (future, for AI sentences)
 """
 
 from __future__ import annotations
@@ -148,9 +154,14 @@ def _update_app_counters(review_state: ReviewState, rating: int, was_review: boo
     """
     review_state.repetitions += 1
 
+    # A lapse happens when a card was in the Review queue before this rating
+    # but got moved out of Review after the scheduler ran (i.e., it was demoted
+    # to Relearning because the user pressed Again).
     if rating == 1 and was_review and get_queue_bucket(review_state) != "review":
         review_state.lapses += 1
 
+    # Success streak tracks consecutive Good/Easy ratings.
+    # Used by regeneration logic to decide when to generate a new sentence.
     if rating in (3, 4):
         review_state.success_streak += 1
     else:
