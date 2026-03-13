@@ -10,8 +10,8 @@ Fields:
     english_gloss — short English meaning (e.g., "to be")
     intro_index  — position in the learning sequence, unique
 
-User-specific learning state lives in Card, not here.
-Table name is "vocab" to match Card's foreign_key="vocab.id".
+User-specific learning state lives in ReviewState, not here.
+Table name is "vocab" to match ReviewState's foreign_key="vocab.id".
 """
 
 from __future__ import annotations
@@ -25,7 +25,7 @@ class Vocab(SQLModel, table=True):
     """
     A single vocabulary item from the seeded dataset.
 
-    One Vocab can have many Cards (one per user studying it).
+    One Vocab can have many ReviewStates (one per user studying it).
     The intro_index determines when this item enters a user's
     study rotation via the progression system.
     """
