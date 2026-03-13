@@ -4,16 +4,16 @@ Database Model: ReviewLog
 A single review event, recorded for stats and auditing.
 
 Fields:
-    id          - primary key
-    user_id     - foreign key to User
-    card_id     - foreign key to Card
-    vocab_id    - foreign key to Vocab (denormalized for easier stats queries)
-    rating      - user rating value (1=Again, 2=Hard, 3=Good, 4=Easy)
-    reviewed_at - timestamp of when the review happened (UTC)
+    id              — primary key
+    user_id         — foreign key to User
+    review_state_id — foreign key to ReviewState
+    vocab_id        — foreign key to Vocab (denormalized for easier stats queries)
+    rating          — user rating value (1=Again, 2=Hard, 3=Good, 4=Easy)
+    reviewed_at     — timestamp of when the review happened (UTC)
 
 This table does not affect scheduling. The scheduler only reads/writes
-the Card model. ReviewLog is append-only, review_service creates entries,
-stats_service reads them for metrics.
+the ReviewState model. ReviewLog is append-only — review_service creates
+entries, stats_service reads them for metrics.
 """
 
 from __future__ import annotations
@@ -42,7 +42,7 @@ class ReviewLog(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
 
     user_id:         int = Field(foreign_key="user.id",          index=True)
-    review_state_id: int = Field(foreign_key="review_state.id",  index=True)  # was card_id
+    review_state_id: int = Field(foreign_key="review_state.id",  index=True)
     vocab_id:        int = Field(foreign_key="vocab.id",         index=True)
 
     rating: int  # 1=Again, 2=Hard, 3=Good, 4=Easy
