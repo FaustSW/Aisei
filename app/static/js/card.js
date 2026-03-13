@@ -1,5 +1,3 @@
-// app/static/js/card.js
-
 document.addEventListener('DOMContentLoaded', () => {
     const cardInner = document.getElementById('card-inner');
     const frontText = document.getElementById('front-text');
@@ -82,11 +80,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (cardInner) {
         cardInner.addEventListener('click', (e) => {
             if (e.target.closest('.card-btn')) return;
-
             const rect = cardInner.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const cardWidth = rect.width;
-
             if (x < cardWidth * 0.2 || x > cardWidth * 0.8) {
                 flipCard();
             }
@@ -187,12 +183,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateProgressBar() {
-        const totalCards = totalReviewed;
         const cardsReviewedEl = document.getElementById('cards-reviewed');
-        const totalCardsEl = document.getElementById('total-cards');
-
         if (cardsReviewedEl) cardsReviewedEl.innerText = totalReviewed;
-        if (totalCardsEl) totalCardsEl.innerText = totalCards;
 
         const again = reviewCounts.again || 0;
         const hard = reviewCounts.hard || 0;

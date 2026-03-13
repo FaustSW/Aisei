@@ -9,6 +9,7 @@ Responsibilities:
 - Classify ReviewState objects into app-visible queue buckets.
 - Select the next ReviewState for review using the hybrid queue policy.
 - Build the deterministic static daily queue for new + review cards.
+- Provide shared time helpers for simulated-time-aware review logic.
 
 Current queue policy:
 1. Learning / relearning cards due right now
@@ -101,8 +102,7 @@ def get_next_review_state(db_session, user_id: int) -> Optional[ReviewState]:
     3. Next learning/relearning due later today
     """
     now = get_simulated_now()
-    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
-    today_end = today_start + timedelta(days=1)
+    today_end = now.replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1)
     today_date = now.date()
 
     all_states = db_session.exec(

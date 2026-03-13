@@ -1,14 +1,12 @@
-# app/services/stats_service.py
-
 """
 stats_service.py
 
 Computes user-facing progress metrics from ReviewLog and ReviewState data.
 
 Current responsibilities:
-- Count ratings selected today
+- Count first ratings selected today per card
 - Count cards in New / Learning / Review buckets
-- Count total reviewed today
+- Count unique cards reviewed today
 - Compute current / max streak for today
 - Count cards due right now
 
@@ -20,36 +18,18 @@ queue counts are usually presented than counting only cards due at this exact se
 
 from __future__ import annotations
 
-from datetime import datetime, timezone, timedelta
-from typing import Optional
+from datetime import timedelta
 
-from flask import session as flask_session
 from sqlmodel import select, col
 
 from app.db import get_session
 from app.models.review_log import ReviewLog
 from app.models.review_state import ReviewState
-from app.services.queue_service import get_queue_bucket
-
-
-def get_simulated_now() -> datetime:
-    """Return simulated time if active, otherwise real current UTC time."""
-    sim = flask_session.get("simulated_time")
-    if sim:
-        dt = datetime.fromisoformat(sim)
-        if dt.tzinfo is None:
-            return dt.replace(tzinfo=timezone.utc)
-        return dt.astimezone(timezone.utc)
-    return datetime.now(timezone.utc)
-
-
-def _as_utc(dt: Optional[datetime]) -> Optional[datetime]:
-    """Normalize datetimes to timezone-aware UTC."""
-    if dt is None:
-        return None
-    if dt.tzinfo is None:
-        return dt.replace(tzinfo=timezone.utc)
-    return dt.astimezone(timezone.utc)
+from app.services.queue_service import (
+    as_utc,
+    get_queue_bucket,
+    get_simulated_now,
+)
 
 
 def get_session_stats(user_id: int) -> dict:
@@ -87,7 +67,7 @@ def get_session_stats(user_id: int) -> dict:
         cards_due = 0
 
         for rs in all_states:
-            due = _as_utc(rs.due_date)
+            due = as_utc(rs.due_date)
             if due is None:
                 continue
 
@@ -114,21 +94,26 @@ def get_session_stats(user_id: int) -> dict:
 
         current_streak = 0
         max_streak = 0
+        seen_review_state_ids = set()
 
         for review in reviews:
-            name = rating_map.get(review.rating)
-            if name:
-                counts[name] += 1
+            is_first_review_today = review.review_state_id not in seen_review_state_ids
+            if is_first_review_today:
+                seen_review_state_ids.add(review.review_state_id)
 
-            if review.rating in (3, 4):
-                current_streak += 1
-                if current_streak > max_streak:
-                    max_streak = current_streak
-            else:
-                current_streak = 0
+                name = rating_map.get(review.rating)
+                if name:
+                    counts[name] += 1
+
+                if review.rating in (3, 4):
+                    current_streak += 1
+                    if current_streak > max_streak:
+                        max_streak = current_streak
+                else:
+                    current_streak = 0
 
         return {
-            "total_reviewed": len(reviews),
+            "total_reviewed": len(seen_review_state_ids),
             "counts": counts,
             "current_streak": current_streak,
             "max_streak": max_streak,
