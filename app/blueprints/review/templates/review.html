@@ -15,15 +15,31 @@
     <a href="{{ url_for('stats.stats') }}" class="stat-btn btn-stats">Stats</a>
 </div>
 
-<div class="progress-container">
-    <div class="progress-bar-segmented">
-        <div class="progress-segment segment-again" id="segment-again"></div>
-        <div class="progress-segment segment-hard" id="segment-hard"></div>
-        <div class="progress-segment segment-good" id="segment-good"></div>
-        <div class="progress-segment segment-easy" id="segment-easy"></div>
+<div class="sim-time-header">
+    <div id="sim-time-display" class="sim-time-display"></div>
+
+    <div class="sim-time-top-controls">
+        <button id="start-sim-time-btn" class="header-btn">Start Simulated Time</button>
+
+        <div id="sim-time-controls" class="sim-time-controls is-hidden">
+            <button id="sim-time-minus" class="header-btn sim-time-small-btn">-1</button>
+            <button id="sim-time-plus" class="header-btn sim-time-small-btn">+1</button>
+
+            <div class="sim-time-input-group">
+                <input
+                    type="number"
+                    id="sim-time-custom"
+                    class="sim-time-input"
+                    placeholder="Days"
+                    inputmode="numeric"
+                >
+                <button id="sim-time-apply" class="sim-time-apply-btn" aria-label="Apply days change">➤</button>
+            </div>
+
+            <button id="sim-time-reset" class="header-btn">Reset to Real Time</button>
+        </div>
     </div>
 </div>
-<div class="progress-text"><span id="cards-reviewed">0</span> cards studied today</div>
 
 <div class="daily-totals" style="display: flex; justify-content: center; gap: 40px; margin-top: 30px; margin-bottom: 10px;">
     <div style="color: #3498db; font-weight: bold;">
@@ -112,17 +128,16 @@
 </div>
 {% endif %}
 
-<button id="start-sim-time-btn" class="header-btn">Start Simulated Time</button>
-
-<div id="sim-time-controls" style="display:none; margin-top:10px;">
-    <div>
-        Simulated Time: <span id="sim-time-display"></span>
+<div class="review-progress-section">
+    <div class="progress-container">
+        <div class="progress-bar-segmented">
+            <div class="progress-segment segment-again" id="segment-again"></div>
+            <div class="progress-segment segment-hard" id="segment-hard"></div>
+            <div class="progress-segment segment-good" id="segment-good"></div>
+            <div class="progress-segment segment-easy" id="segment-easy"></div>
+        </div>
     </div>
-    <button id="sim-time-plus" class="header-btn">+1 Day</button>
-    <button id="sim-time-minus" class="header-btn">-1 Day</button>
-    <input type="number" id="sim-time-custom" placeholder="Days to add/subtract" style="width:120px;">
-    <button id="sim-time-set" class="header-btn">Set</button>
-    <button id="sim-time-reset" class="header-btn">Reset to Real Time</button>
+    <div class="progress-text"><span id="cards-reviewed">0</span> cards studied today</div>
 </div>
 
 {% endblock %}
@@ -140,6 +155,8 @@
             good: {{ stats.counts.good if stats else 0 }},
             easy: {{ stats.counts.easy if stats else 0 }}
         },
+        current_streak: {{ stats.current_streak if stats else 0 }},
+        max_streak: {{ stats.max_streak if stats else 0 }},
         cards_due: {{ stats.cards_due if stats else 0 }}
     };
 </script>
