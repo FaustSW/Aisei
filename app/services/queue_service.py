@@ -71,6 +71,7 @@ def get_queue_bucket(review_state: ReviewState) -> str:
 
 
 def is_due_now(review_state: ReviewState, now: datetime) -> bool:
+    """True if this card's due_date is at or before the current time."""
     due = as_utc(review_state.due_date)
     return due is not None and due <= now
 
@@ -80,6 +81,7 @@ def is_due_later_today(
     now: datetime,
     today_end: datetime,
 ) -> bool:
+    """True if this card is due after now but before the end of today."""
     due = as_utc(review_state.due_date)
     return due is not None and now < due <= today_end
 
@@ -179,6 +181,8 @@ def build_static_daily_queue(
         ).all()
     } if vocab_ids else {}
 
+    # Sort new cards by their vocab intro_index so they appear in
+    # curriculum order. Cards with no matching vocab get pushed to the end.
     def new_sort_key(rs: ReviewState):
         vocab = vocab_map.get(rs.vocab_id)
         intro_index = vocab.intro_index if vocab and vocab.intro_index is not None else 10**9

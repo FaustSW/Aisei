@@ -4,8 +4,8 @@ stats_service.py
 Computes user-facing progress metrics from ReviewLog and ReviewState data.
 
 Current responsibilities:
-- Count first ratings selected today per card
-- Count cards in New / Learning / Review buckets
+- Count first ratings selected today per card (not every re-review)
+- Count cards in New / Learning / Review buckets due today
 - Count unique cards reviewed today
 - Compute current / max streak for today
 - Count cards due right now
@@ -14,6 +14,16 @@ Important queue note:
 For the New / Learning / Review display on the review page, we count cards
 due by the end of the current simulated day. This is closer to how Anki-style
 queue counts are usually presented than counting only cards due at this exact second.
+
+It SHOULD NOT:
+- Handle HTTP requests, sessions, or template rendering.
+- Perform scheduling updates or review workflow logic (review_service handles that).
+- Call external APIs or trigger content generation.
+
+Architectural Position:
+
+Blueprint (review / stats endpoints) → stats_service → models (ReviewState, ReviewLog)
+                                                      → queue_service (bucket classification, time helpers)
 """
 
 from __future__ import annotations
@@ -96,6 +106,10 @@ def get_session_stats(user_id: int) -> dict:
         max_streak = 0
         seen_review_state_ids = set()
 
+        # Only count each card's first review of the day toward the progress bar
+        # and streak. Re-reviews of the same card (e.g., learning steps) are
+        # intentionally skipped so the numbers match how many distinct cards
+        # the user has worked through today.
         for review in reviews:
             is_first_review_today = review.review_state_id not in seen_review_state_ids
             if is_first_review_today:

@@ -3,14 +3,18 @@
 """
 auth_service.py
 
-Centralizes application authentication and profile-management logic.
+Centralizes authentication and profile-management logic.
 
-Current scope:
-- Load login profile metadata
+Responsibilities:
+- Load login profile metadata for the frontend
 - Validate username/password pairs
-- Create new users
-- Seed initial ReviewState rows for new users
+- Create new users and seed their initial ReviewState rows
 - Delete users and their review data
+
+It SHOULD NOT:
+- Handle HTTP requests or Flask routing (auth blueprint handles that).
+- Implement scheduling or review logic (review_service handles that).
+- Contain password hashing (planned, not yet implemented).
 
 Future expansion:
 - Replace plaintext passwords with hashing + verification

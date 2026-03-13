@@ -33,7 +33,7 @@ class User(SQLModel, table=True):
     A registered user account.
 
     Stores identity and auth credentials. Learning state
-    is tracked per-user through Card records, not here.
+    is tracked per-user through ReviewState records, not here.
     """
 
     __tablename__ = "user"
