@@ -8,6 +8,17 @@
     <!-- Global CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
 
+    <script>
+        (function () {
+            const savedTheme = localStorage.getItem('selectedTheme');
+            if (!savedTheme) {
+                return;
+            }
+
+            document.write('<style>body{visibility:hidden;}</style>');
+        })();
+    </script>
+
     <style>
         .theme-selector {
             position: fixed;
@@ -52,7 +63,7 @@
 <body>
     <!-- THEME SELECTOR (functional - powered by theme.js) -->
     <div class="theme-selector">
-        <label for="theme-dropdown">🎨 Theme:</label>
+        <label for="theme-dropdown">Theme:</label>
         <select id="theme-dropdown" onchange="changeTheme()">
             <option value="">Loading...</option>
         </select>
