@@ -1,25 +1,17 @@
 """
-Blueprints Package
+App Package
 
-Flask Blueprint modules that define the web layer of the application.
+Top-level application package. Contains all server-side code
+organized into sub-packages:
 
-Each blueprint groups related routes (URL endpoints) and is registered
-with the main Flask app in app.py. Current blueprints:
+    blueprints/  — Flask route definitions (auth, review, stats, themes)
+    models/      — SQLModel database schema (User, Vocab, ReviewState, etc.)
+    services/    — Business logic (review loop, scheduling, queue, stats, auth)
+    clients/     — Thin wrappers around external APIs (GPT, ElevenLabs)
+    templates/   — Jinja2 HTML templates
+    static/      — CSS, JS, and other static assets
 
-    auth   — login, logout, profile creation and deletion
-    review — card display, rating submission, simulated time controls
-    stats  — progress metrics and summary views
-    themes — theme listing and selection API
-
-Blueprints are responsible for reading request data, managing session
-state, calling service-layer functions, and returning rendered templates
-or JSON responses.
-
-Blueprints SHOULD NOT:
-- Contain business logic (services handle that).
-- Mutate models directly outside of services.
-- Create database engines or define database configuration.
-
-All database configuration lives in app.db.
-All domain logic lives in services.
+The Flask app itself is created in app.py at the project root,
+not in this __init__.py. This file just marks the directory as
+a Python package so imports like `from app.models.user import User` work.
 """
