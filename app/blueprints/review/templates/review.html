@@ -6,6 +6,7 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/card.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/review_layout.css') }}">
 {% endblock %}
 
 {% block content %}
@@ -41,14 +42,14 @@
     </div>
 </div>
 
-<div class="daily-totals" style="display: flex; justify-content: center; gap: 40px; margin-top: 30px; margin-bottom: 10px;">
-    <div style="color: #3498db; font-weight: bold;">
+<div class="daily-totals daily-totals-container">
+    <div class="total-item-new">
         New: <span id="total-new">{{ stats.new_cards if stats else 0 }}</span>
     </div>
-    <div style="color: #f39c12; font-weight: bold;">
+    <div class="total-item-learning">
         Learning/Relearning: <span id="total-learning">{{ stats.learning_cards if stats else 0 }}</span>
     </div>
-    <div style="color: #2ecc71; font-weight: bold;">
+    <div class="total-item-review">
         Review: <span id="total-review">{{ stats.review_cards if stats else 0 }}</span>
     </div>
 </div>
@@ -68,7 +69,7 @@
                         {{ card.sentence }}
                     </div>
                     {% else %}
-                    <div class="sentence-text" id="front-sentence" style="display: none;"></div>
+                    <div class="sentence-text is-hidden" id="front-sentence"></div>
                     {% endif %}
                 </div>
                 <div class="button-row">
@@ -86,7 +87,7 @@
                         {{ card.translation }}
                     </div>
                     {% else %}
-                    <div class="sentence-text" id="back-translation" style="display: none;"></div>
+                    <div class="sentence-text is-hidden" id="back-translation"></div>
                     {% endif %}
                 </div>
                 <div class="button-row">
@@ -121,7 +122,7 @@
 </div>
 {% else %}
 <div class="wrapper">
-    <div style="text-align: center; padding: 40px;">
+    <div class="empty-state">
         <h2>🎉 No cards due!</h2>
         <p>You've reviewed everything that's due. Check back later.</p>
     </div>

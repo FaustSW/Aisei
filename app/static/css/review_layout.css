@@ -1,0 +1,34 @@
+/* Container for the New/Learning/Review totals */
+.daily-totals-container {
+    display: flex; 
+    justify-content: center; 
+    gap: 40px; 
+    margin-top: 30px; 
+    margin-bottom: 10px;
+}
+
+.total-item-new {
+    color: #3498db; 
+    font-weight: bold;
+}
+
+.total-item-learning {
+    color: #f39c12; 
+    font-weight: bold;
+}
+
+.total-item-review {
+    color: #2ecc71; 
+    font-weight: bold;
+}
+
+/* State for hidden elements (sentences/translations) */
+.is-hidden {
+    display: none;
+}
+
+/* Style for the "No cards due" message */
+.empty-state {
+    text-align: center; 
+    padding: 40px;
+}
