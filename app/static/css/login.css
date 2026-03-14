@@ -110,6 +110,13 @@ h1 {
     text-align: center;
 }
 
+/* ============================================================================================================== */
+/* HIDE PASSWORD WHILE ITS TYPED */
+/* ============================================================================================================== */
+.passwordSection {
+    display: none;
+}
+
 .avatar-1 { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
 .avatar-2 { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
 .avatar-3 { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
