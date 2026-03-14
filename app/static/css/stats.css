@@ -1,0 +1,32 @@
+    .page-actions {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        z-index: 10;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .page-btn {
+        display: inline-block;
+        padding: 8px 16px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-size: 0.9rem;
+        font-weight: bold;
+        text-align: center;
+        cursor: pointer;
+        transition: opacity 0.2s, transform 0.1s;
+    }
+    .page-btn:hover {
+        opacity: 0.85;
+        transform: translateY(-1px);
+    }
+    .btn-back {
+        background: #2ecc71;
+        color: white;
+    }
+    .btn-logout {
+        background: #e74c3c;
+        color: white;
+    }
