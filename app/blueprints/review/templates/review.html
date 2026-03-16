@@ -11,6 +11,12 @@
 
 {% block content %}
 
+{# 
+  Below controls the layout of the various buttons on the review page
+  Excluding the theme button, which is handled in the base.html template
+  The style of other buttons, such as log out, and time simulation, should aim to emulate the theme and card style
+#}
+
 <div class="stats">
     <a href="{{ url_for('auth.logout') }}" class="stat-btn btn-logout">Log Out</a>
     <a href="{{ url_for('stats.stats') }}" class="stat-btn btn-stats">Stats</a>
@@ -53,6 +59,12 @@
         Review: <span id="total-review">{{ stats.review_cards if stats else 0 }}</span>
     </div>
 </div>
+
+{# 
+  Main card interface  - Front of card shows term and example sentence (if available)
+  Back of card shows English gloss and translation (if available)
+  Controls for flipping the card and rating the card are on the back face
+#}
 
 {% if card %}
 <div class="wrapper">
@@ -128,6 +140,11 @@
     </div>
 </div>
 {% endif %}
+
+{# 
+  Below is the progress bar and stats section that shows how many cards have been reviewed today, and how many of each rating have been given
+  The progress bar fills in based on the percentage of each rating out of the total cards reviewed today
+#}
 
 <div class="review-progress-section">
     <div class="progress-container">
