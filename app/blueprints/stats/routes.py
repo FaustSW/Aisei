@@ -14,6 +14,7 @@ Routes:
 """
 
 from flask import Blueprint, render_template
+from app.services.stats_service import get_session_stats
 
 stats_bp = Blueprint('stats', __name__, template_folder='templates')
 
@@ -21,4 +22,13 @@ stats_bp = Blueprint('stats', __name__, template_folder='templates')
 @stats_bp.route('/stats', methods=['GET'])
 def stats():
     """Render the stats page."""
-    return render_template('stats.html')
+
+    # temporary user_id until auth session is wired
+    user_id = 1
+
+    stats_data = get_session_stats(user_id)
+
+    return render_template(
+        "stats.html",
+        cards_due=stats_data["cards_due"]
+    )
