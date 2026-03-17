@@ -154,7 +154,9 @@
             <div class="progress-segment segment-easy" id="segment-easy"></div>
         </div>
     </div>
-    <div class="progress-text"><span id="cards-reviewed">0</span> cards studied today</div>
+    {# Removed '0' from the inside of span to try new layout where the text below the progress bar indicates 
+    that the bar is showing the distribution of ratings for the current session, not the total number of cards reviewed #}
+    <div class="progress-text"><span id="cards-reviewed"></span> Ratings Distribution</div>
 </div>
 
 <div id="logout-modal" class="modal-overlay is-hidden">

@@ -228,8 +228,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     function updateProgressBar() {
-        const cardsReviewedEl = document.getElementById('cards-reviewed');
-        if (cardsReviewedEl) cardsReviewedEl.innerText = totalReviewed;
+        //commenting out the below because I want change the text below
+        //the card to indicate that the bar is showing the distribution of ratings for the current session
+        // not the total number of cards reviewed. 
+        //const cardsReviewedEl = document.getElementById('cards-reviewed');
+        //if (cardsReviewedEl) cardsReviewedEl.innerText = totalReviewed;
 
         const again = reviewCounts.again || 0;
         const hard = reviewCounts.hard || 0;
