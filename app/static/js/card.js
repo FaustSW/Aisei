@@ -214,9 +214,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (modalConfirm) {
         modalConfirm.addEventListener('click', () => {
-            // This pulls the URL directly from the Flask context 
-            // set in your review.html script block or hardcode it
-            window.location.href = "/stats"; 
+            window.location.href = "/review/go_to_stats"; 
         });
     }
 

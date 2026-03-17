@@ -121,6 +121,6 @@ def check_sim_time():
         "sim_time": sim_time,
     })
 
-@review_bp.route("/go_to_review")
-def go_to_review():
+@review_bp.route("/go_to_stats", methods=["GET"])
+def go_to_stats():
     return redirect(url_for("stats.stats"))
