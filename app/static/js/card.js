@@ -9,6 +9,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const initial = (typeof INITIAL_STATS !== 'undefined') ? INITIAL_STATS : {};
     const initialPreviews = (typeof INITIAL_PREVIEW_INTERVALS !== 'undefined') ? INITIAL_PREVIEW_INTERVALS : {};
 
+    const logoutModal = document.getElementById('logout-modal');
+    const signOutBtn = document.getElementById('sign-out-btn'); 
+    const modalConfirm = document.getElementById('modal-confirm');
+    const modalCancel = document.getElementById('modal-cancel');
+    const modalMessage = document.getElementById('modal-message');
+
     let reviewStateId = typeof CURRENT_REVIEW_STATE_ID !== 'undefined' ? CURRENT_REVIEW_STATE_ID : null;
     let totalReviewed = initial.total_reviewed || 0;
     let reviewCounts = {
@@ -181,6 +187,45 @@ document.addEventListener('DOMContentLoaded', () => {
         if (totalLearning) totalLearning.innerText = stats.learning_cards || 0;
         if (totalReview) totalReview.innerText = stats.review_cards || 0;
     }
+
+    if (signOutBtn) {
+        signOutBtn.addEventListener('click', () => {
+            // Pulling live numbers from the spans that syncStats updates
+            const newCards = parseInt(document.getElementById('total-new')?.textContent) || 0;
+            const learningCards = parseInt(document.getElementById('total-learning')?.textContent) || 0;
+            const reviewCards = parseInt(document.getElementById('total-review')?.textContent) || 0;
+            const totalRemaining = newCards + learningCards + reviewCards;
+
+            if (totalRemaining > 0) {
+                modalMessage.innerHTML = `You still have <strong>${totalRemaining}</strong> cards left today.<br>Are you sure you want to leave?`;
+            } else {
+                modalMessage.textContent = "You've finished your cards! See you next time?";
+            }
+
+            logoutModal.classList.remove('is-hidden');
+        });
+    }
+
+    if (modalCancel) {
+        modalCancel.addEventListener('click', () => {
+            logoutModal.classList.add('is-hidden');
+        });
+    }
+
+    if (modalConfirm) {
+        modalConfirm.addEventListener('click', () => {
+            // This pulls the URL directly from the Flask context 
+            // set in your review.html script block or hardcode it
+            window.location.href = "/stats"; 
+        });
+    }
+
+    // Close modal if clicking the background overlay
+    window.addEventListener('click', (e) => {
+        if (e.target === logoutModal) {
+            logoutModal.classList.add('is-hidden');
+        }
+    });
 
     function updateProgressBar() {
         const cardsReviewedEl = document.getElementById('cards-reviewed');

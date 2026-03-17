@@ -18,8 +18,7 @@
 #}
 
 <div class="stats">
-    <a href="{{ url_for('auth.logout') }}" class="stat-btn btn-logout">Log Out</a>
-    <a href="{{ url_for('stats.stats') }}" class="stat-btn btn-stats">Stats</a>
+    <button type="button" id="sign-out-btn" class="stat-btn btn-logout">Sign Out</button>
 </div>
 
 <div class="sim-time-header">
@@ -53,7 +52,7 @@
         New: <span id="total-new">{{ stats.new_cards if stats else 0 }}</span>
     </div>
     <div class="total-item-learning">
-        Learning/Relearning: <span id="total-learning">{{ stats.learning_cards if stats else 0 }}</span>
+        Learning: <span id="total-learning">{{ stats.learning_cards if stats else 0 }}</span>
     </div>
     <div class="total-item-review">
         Review: <span id="total-review">{{ stats.review_cards if stats else 0 }}</span>
@@ -156,6 +155,18 @@
         </div>
     </div>
     <div class="progress-text"><span id="cards-reviewed">0</span> cards studied today</div>
+</div>
+
+<div id="logout-modal" class="modal-overlay is-hidden">
+    <div class="modal-content glass-panel">
+        <h2 id="modal-title">Sign Out</h2>
+        <p id="modal-message">Are you sure you want to sign out?</p>
+        
+        <div class="modal-actions">
+            <button id="modal-cancel" class="glass-button">Go Back</button>
+            <button id="modal-confirm" class="glass-button btn-logout">Sign Out anyway</button>
+        </div>
+    </div>
 </div>
 
 {% endblock %}
