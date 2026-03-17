@@ -20,8 +20,12 @@ Required by spec, but lower priority early on.
 
 {% block content %}
 <div class="page-actions">
-    <a href="{{ url_for('review.generate_cards') }}" class="page-btn btn-back">&#8592; Go Back</a>
-    <a href="{{ url_for('auth.logout') }}" class="page-btn btn-logout">Log Out</a>
+    {#
+      We prompt the user if they're sure they want to exit in review.html, 
+      so here we can just link to the logout route instead of adding a button to go back to the review page.
+      <a href="{{ url_for('review.generate_cards') }}" class="page-btn btn-back">&#8592; Go Back</a>
+    #}
+    <a href="{{ url_for('auth.logout') }}" class="page-btn btn-logout">Exit</a>
 </div>
 
 <div class="container">
@@ -29,12 +33,30 @@ Required by spec, but lower priority early on.
     <h1 class="stats-title">Statistics</h1>
 
     <div class="stats-grid">
-
         <div class="stat-card">
             <h2>Cards Due Now</h2>
             <p class="stat-number">{{ cards_due }}</p>
         </div>
-
+                <div class="stat-card">
+            <h2>Cards Due Now</h2>
+            <p class="stat-number">{{ cards_due }}</p>
+        </div>
+                <div class="stat-card">
+            <h2>Cards Due Now</h2>
+            <p class="stat-number">{{ cards_due }}</p>
+        </div>
+                <div class="stat-card">
+            <h2>Cards Due Now</h2>
+            <p class="stat-number">{{ cards_due }}</p>
+        </div>
+                <div class="stat-card">
+            <h2>Cards Due Now</h2>
+            <p class="stat-number">{{ cards_due }}</p>
+        </div>
+                <div class="stat-card">
+            <h2>Cards Due Now</h2>
+            <p class="stat-number">{{ cards_due }}</p>
+        </div>
     </div>
 
 </div>
