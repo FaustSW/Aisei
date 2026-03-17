@@ -120,3 +120,7 @@ def check_sim_time():
         "active": bool(sim_time),
         "sim_time": sim_time,
     })
+
+@review_bp.route("/go_to_review")
+def go_to_review():
+    return redirect(url_for("stats.stats"))

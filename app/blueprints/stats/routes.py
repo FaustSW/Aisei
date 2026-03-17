@@ -19,7 +19,7 @@ from app.services.stats_service import get_session_stats
 stats_bp = Blueprint('stats', __name__, template_folder='templates')
 
 
-@stats_bp.route('/stats', methods=['GET'])
+@stats_bp.route('/', methods=['GET'])
 def stats():
     """Render the stats page."""
 
