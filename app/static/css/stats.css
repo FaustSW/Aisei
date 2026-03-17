@@ -1,4 +1,11 @@
-    .page-actions {
+body {
+    font-family: Arial, sans-serif;
+    background: var(--bg-gradient);
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.page-actions {
         position: fixed;
         top: 20px;
         left: 20px;
