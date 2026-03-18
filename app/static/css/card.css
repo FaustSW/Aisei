@@ -305,6 +305,26 @@ button:hover {
     color: var(--text-color);
 }
 
+.audio-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.8rem;
+    color: var(--text-color, #333);
+    padding: 8px;
+    border-radius: 50%;
+    line-height: 1;
+    transition: background-color 0.2s, transform 0.1s;
+}
+
+.audio-btn:hover {
+    background-color: rgba(0, 0, 0, 0.08);
+}
+
+button.audio-btn:hover {
+    transform: scale(1.1);
+}
+
 .sentence-text {
     font-size: 2rem;
     font-weight: 600;

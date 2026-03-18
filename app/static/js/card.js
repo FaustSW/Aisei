@@ -5,6 +5,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const frontSentence = document.getElementById('front-sentence');
     const backTranslation = document.getElementById('back-translation');
     const buttons = document.querySelectorAll('.card-btn');
+    const frontAudioBtn = document.getElementById('front-audio-btn');
+    const backAudioBtn = document.getElementById('back-audio-btn');
 
     const initial = (typeof INITIAL_STATS !== 'undefined') ? INITIAL_STATS : {};
     const initialPreviews = (typeof INITIAL_PREVIEW_INTERVALS !== 'undefined') ? INITIAL_PREVIEW_INTERVALS : {};
@@ -27,6 +29,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
     updateProgressBar();
     updatePreviewLabels(initialPreviews);
+
+    function speakText(text) {
+        if (!window.speechSynthesis || !text.trim()) return;
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text.trim());
+        window.speechSynthesis.speak(utterance);
+    }
+
+    if (frontAudioBtn) {
+        frontAudioBtn.addEventListener('click', () => {
+            const parts = [frontText?.textContent, frontSentence?.textContent]
+                .filter(t => t && t.trim());
+            speakText(parts.join('. '));
+        });
+    }
+
+    if (backAudioBtn) {
+        backAudioBtn.addEventListener('click', () => {
+            const parts = [backText?.textContent, backTranslation?.textContent]
+                .filter(t => t && t.trim());
+            speakText(parts.join('. '));
+        });
+    }
 
     function flipCard() {
         if (cardInner) cardInner.classList.toggle('is-flipped');
@@ -85,7 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (cardInner) {
         cardInner.addEventListener('click', (e) => {
-            if (e.target.closest('.card-btn')) return;
+            if (e.target.closest('.card-btn') || e.target.closest('.audio-btn')) return;
             const rect = cardInner.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const cardWidth = rect.width;
