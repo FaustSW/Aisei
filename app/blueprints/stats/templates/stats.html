@@ -35,32 +35,34 @@ Required by spec, but lower priority early on.
     <div class="stats-grid">
         <div class="stat-card">
             <h2>Cards Due Now</h2>
-            <p class="stat-number">{{ cards_due }}</p>
+            <p class="stat-number">{{ stats.cards_due }}</p>
         </div>
-                <div class="stat-card">
-            <h2>Cards Due Now</h2>
-            <p class="stat-number">{{ cards_due }}</p>
+
+        <div class="stat-card">
+            <h2>Cards Reviewed Today</h2>
+            <p class="stat-number">{{ stats.total_reviewed }}</p>
         </div>
-                <div class="stat-card">
-            <h2>Cards Due Now</h2>
-            <p class="stat-number">{{ cards_due }}</p>
+
+        <div class="stat-card">
+            <h2>Current Streak</h2>
+            <p class="stat-number">{{ stats.current_streak }}</p>
         </div>
-                <div class="stat-card">
-            <h2>Cards Due Now</h2>
-            <p class="stat-number">{{ cards_due }}</p>
+
+        <div class="stat-card">
+            <h2>New Due Today</h2>
+            <p class="stat-number">{{ stats.new_cards }}</p>
         </div>
-                <div class="stat-card">
-            <h2>Cards Due Now</h2>
-            <p class="stat-number">{{ cards_due }}</p>
+
+        <div class="stat-card">
+            <h2>Learning Due Today</h2>
+            <p class="stat-number">{{ stats.learning_cards }}</p>
         </div>
-                <div class="stat-card">
-            <h2>Cards Due Now</h2>
-            <p class="stat-number">{{ cards_due }}</p>
+
+        <div class="stat-card">
+            <h2>Review Due Today</h2>
+            <p class="stat-number">{{ stats.review_cards }}</p>
         </div>
     </div>
 
 </div>
 {% endblock %}
-
-
-
