@@ -29,6 +29,6 @@ def stats():
     stats_data = get_session_stats(user_id)
 
     return render_template(
-        "stats.html",
-        cards_due=stats_data["cards_due"]
-    )
+    "stats.html",
+    stats=stats_data
+)
