@@ -360,15 +360,15 @@ button.audio-btn:hover {
 }
 
 /* ==========================================================================
-   PROGRESS BAR
+   RATING DISTRIBUTION
    ========================================================================== */
-.review-progress-section {
+.rating-distribution-section {
     width: 100%;
     max-width: 600px;
     margin: 28px auto 0;
 }
 
-.progress-container {
+.rating-distribution-container {
     width: 100%;
     max-width: 600px;
     margin: 0 auto;
@@ -378,13 +378,13 @@ button.audio-btn:hover {
     height: 16px;
 }
 
-.progress-bar-segmented {
+.rating-distribution-bar {
     display: flex;
     height: 100%;
     width: 100%;
 }
 
-.progress-segment {
+.rating-distribution-segment {
     height: 100%;
     transition: width 0.4s ease;
     width: 0%;
@@ -395,7 +395,7 @@ button.audio-btn:hover {
 .segment-good  { background: #2ecc71; }
 .segment-easy  { background: #3498db; }
 
-.progress-text {
+.rating-distribution-text {
     text-align: center;
     margin-top: 10px;
     font-size: 13px;
@@ -493,7 +493,7 @@ button.audio-btn:hover {
         width: 130px;
     }
 
-    .review-progress-section {
+    .rating-distribution-section {
         width: calc(100% - 32px);
         margin-top: 20px;
     }

@@ -18,7 +18,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalMessage = document.getElementById('modal-message');
 
     let reviewStateId = typeof CURRENT_REVIEW_STATE_ID !== 'undefined' ? CURRENT_REVIEW_STATE_ID : null;
-    let totalReviewed = initial.total_reviewed || 0;
     let reviewCounts = {
         again: (initial.counts && initial.counts.again) || 0,
         hard:  (initial.counts && initial.counts.hard)  || 0,
@@ -27,7 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     let isFlipping = false;
 
-    updateProgressBar();
+    updateRatingDistribution();
     updatePreviewLabels(initialPreviews);
 
     function speakText(text) {
@@ -194,7 +193,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function syncStats(stats) {
-        totalReviewed = stats.total_reviewed || 0;
         reviewCounts = {
             again: (stats.counts && stats.counts.again) || 0,
             hard:  (stats.counts && stats.counts.hard)  || 0,
@@ -202,7 +200,7 @@ document.addEventListener('DOMContentLoaded', () => {
             easy:  (stats.counts && stats.counts.easy)  || 0,
         };
 
-        updateProgressBar();
+        updateRatingDistribution();
 
         const totalNew = document.getElementById('total-new');
         const totalLearning = document.getElementById('total-learning');
@@ -250,13 +248,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    function updateProgressBar() {
-        //commenting out the below because I want change the text below
-        //the card to indicate that the bar is showing the distribution of ratings for the current session
-        // not the total number of cards reviewed. 
-        //const cardsReviewedEl = document.getElementById('cards-reviewed');
-        //if (cardsReviewedEl) cardsReviewedEl.innerText = totalReviewed;
-
+    function updateRatingDistribution() {
         const again = reviewCounts.again || 0;
         const hard = reviewCounts.hard || 0;
         const good = reviewCounts.good || 0;

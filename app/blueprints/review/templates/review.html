@@ -143,22 +143,20 @@
 {% endif %}
 
 {# 
-  Below is the progress bar and stats section that shows how many cards have been reviewed today, and how many of each rating have been given
-  The progress bar fills in based on the percentage of each rating out of the total cards reviewed today
+  Below is the rating distribution section.
+  The bar fills in based on the percentage of each rating in the current session.
 #}
 
-<div class="review-progress-section">
-    <div class="progress-container">
-        <div class="progress-bar-segmented">
-            <div class="progress-segment segment-again" id="segment-again"></div>
-            <div class="progress-segment segment-hard" id="segment-hard"></div>
-            <div class="progress-segment segment-good" id="segment-good"></div>
-            <div class="progress-segment segment-easy" id="segment-easy"></div>
+<div class="rating-distribution-section">
+    <div class="rating-distribution-container">
+        <div class="rating-distribution-bar">
+            <div class="rating-distribution-segment segment-again" id="segment-again"></div>
+            <div class="rating-distribution-segment segment-hard" id="segment-hard"></div>
+            <div class="rating-distribution-segment segment-good" id="segment-good"></div>
+            <div class="rating-distribution-segment segment-easy" id="segment-easy"></div>
         </div>
     </div>
-    {# Removed '0' from the inside of span to try new layout where the text below the progress bar indicates 
-    that the bar is showing the distribution of ratings for the current session, not the total number of cards reviewed #}
-    <div class="progress-text"><span id="cards-reviewed"></span> Ratings Distribution</div>
+    <div class="rating-distribution-text">Ratings Distribution</div>
 </div>
 
 <div id="logout-modal" class="modal-overlay is-hidden">
