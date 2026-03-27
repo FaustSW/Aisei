@@ -5,19 +5,25 @@ Handles the interactive review experience and simulated time controls.
 Card selection and scheduling are delegated to review_service.
 
 Routes:
-    GET  /review/                - load the review page with the next due card
-    POST /review/rate            - process a rating and return next card + stats
-    POST /review/start_sim_time  - enable simulated time at current UTC
-    POST /review/adjust_sim_time - shift simulated time by a day delta
-    POST /review/reset_sim_time  - disable simulated time, return to real time
-    GET  /review/check_sim_time  - report whether simulated time is active
+    GET  /review/                      - load the review page with the next due card
+    POST /review/rate                  - process a rating and return next card + stats
+    POST /review/set_daily_new_limit   - persist and apply the user's new-card limit
+    POST /review/start_sim_time        - enable simulated time at current UTC
+    POST /review/adjust_sim_time       - shift simulated time by a day delta
+    POST /review/reset_sim_time        - disable simulated time, return to real time
+    GET  /review/check_sim_time        - report whether simulated time is active
 """
 
 from datetime import datetime, timezone, timedelta
 
 from flask import Blueprint, render_template, request, jsonify, session, redirect, url_for
 
+from app.services.queue_service import invalidate_static_daily_queue
 from app.services.review_service import get_next_card, process_review
+from app.services.settings_service import (
+    get_daily_new_limit,
+    update_daily_new_limit,
+)
 from app.services.stats_service import get_session_stats
 
 
@@ -33,11 +39,13 @@ def generate_cards():
 
     card = get_next_card(user_id)
     stats = get_session_stats(user_id)
+    daily_new_limit = get_daily_new_limit(user_id)
 
     return render_template(
         "review.html",
         card=card,
         stats=stats,
+        daily_new_limit=daily_new_limit,
     )
 
 
@@ -71,11 +79,42 @@ def rate_card():
     })
 
 
+@review_bp.route("/set_daily_new_limit", methods=["POST"])
+def set_daily_new_limit():
+    """Persist a user's daily new-card limit and return refreshed page state."""
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Not logged in"}), 401
+
+    data = request.get_json(force=True)
+    raw_limit = data.get("daily_new_limit")
+
+    if raw_limit is None:
+        return jsonify({"error": "daily_new_limit is required"}), 400
+
+    try:
+        settings = update_daily_new_limit(user_id, int(raw_limit))
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+
+    invalidate_static_daily_queue(user_id)
+
+    return jsonify({
+        "ok": True,
+        "daily_new_limit": settings.daily_new_limit,
+    })
+
+
 @review_bp.route("/start_sim_time", methods=["POST"])
 def start_sim_time():
     """Start simulated time at the current real UTC time."""
+    user_id = session.get("user_id")
     now = datetime.now(timezone.utc)
     session["simulated_time"] = now.isoformat()
+
+    if user_id:
+        invalidate_static_daily_queue(user_id)
+
     return jsonify({
         "active": True,
         "sim_time": now.isoformat(),
@@ -85,6 +124,7 @@ def start_sim_time():
 @review_bp.route("/adjust_sim_time", methods=["POST"])
 def adjust_sim_time():
     """Move simulated time forward or backward by a whole-number day delta."""
+    user_id = session.get("user_id")
     data = request.get_json(force=True)
     days_delta = int(data.get("days_delta", 0))
 
@@ -96,6 +136,9 @@ def adjust_sim_time():
 
     session["simulated_time"] = new_time.isoformat()
 
+    if user_id:
+        invalidate_static_daily_queue(user_id)
+
     return jsonify({
         "active": True,
         "sim_time": new_time.isoformat(),
@@ -105,7 +148,12 @@ def adjust_sim_time():
 @review_bp.route("/reset_sim_time", methods=["POST"])
 def reset_sim_time():
     """Disable simulated time and return to real time."""
+    user_id = session.get("user_id")
     session.pop("simulated_time", None)
+
+    if user_id:
+        invalidate_static_daily_queue(user_id)
+
     return jsonify({
         "active": False,
         "sim_time": None,
@@ -120,6 +168,7 @@ def check_sim_time():
         "active": bool(sim_time),
         "sim_time": sim_time,
     })
+
 
 @review_bp.route("/go_to_stats", methods=["GET"])
 def go_to_stats():

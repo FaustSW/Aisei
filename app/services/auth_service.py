@@ -23,8 +23,10 @@ from app.models.generated_card import GeneratedCard
 from app.models.review_log import ReviewLog
 from app.models.review_state import ReviewState
 from app.models.user import User
+from app.models.user_settings import UserSettings
 from app.models.vocab import Vocab
 from app.services.scheduler_adapter import SchedulerAdapter
+from app.services.settings_service import create_default_user_settings
 
 
 _scheduler = SchedulerAdapter()
@@ -108,6 +110,7 @@ def create_user(
         db.commit()
         db.refresh(user)
 
+        create_default_user_settings(user.id, db_session=db)
         _seed_review_states(db, user.id)
 
         return {
@@ -126,9 +129,10 @@ def delete_user(user_id: int) -> None:
     Delete a user and all user-owned review data.
 
     Deletion order matters:
-    - ReviewLog rows first (they reference both User and ReviewState)
-    - GeneratedCard rows next (they reference ReviewState)
+    - ReviewLog rows first
+    - GeneratedCard rows next
     - ReviewState rows next
+    - UserSettings row next
     - User row last
     """
     db = get_session()
@@ -160,6 +164,12 @@ def delete_user(user_id: int) -> None:
 
         for rs in states:
             db.delete(rs)
+
+        user_settings = db.exec(
+            select(UserSettings).where(UserSettings.user_id == user_id)
+        ).first()
+        if user_settings is not None:
+            db.delete(user_settings)
 
         db.delete(user)
         db.commit()

@@ -65,7 +65,6 @@
   Controls for flipping the card and rating the card are on the back face
 #}
 
-{% if card %}
 <div class="wrapper">
     <div class="card" id="main-card">
         <div class="card-inner" id="card-inner">
@@ -73,59 +72,92 @@
             <div class="card-face card-front">
                 <div class="content-area">
                     <div class="large-text" id="front-text">
-                        {{ card.term }}
+                        {% if card %}
+                            {{ card.term }}
+                        {% else %}
+                            🎉 Done!
+                        {% endif %}
                     </div>
-                    {% if card.sentence %}
+
+                    {% if card and card.sentence %}
                     <div class="sentence-text" id="front-sentence">
                         {{ card.sentence }}
                     </div>
                     {% else %}
                     <div class="sentence-text is-hidden" id="front-sentence"></div>
                     {% endif %}
-                    <button class="audio-btn" id="front-audio-btn" title="Listen" aria-label="Listen to front of card">🔊</button>
+
+                    <button
+                        class="audio-btn {% if not card %}is-hidden{% endif %}"
+                        id="front-audio-btn"
+                        title="Listen"
+                        aria-label="Listen to front of card"
+                    >
+                        🔊
+                    </button>
                 </div>
                 <div class="button-row">
-                    <div class="btn-label">Press Space or Click Sides to Flip</div>
+                    <div class="btn-label">
+                        {% if card %}
+                            Press Space or Click Sides to Flip
+                        {% else %}
+                            No more cards due.
+                        {% endif %}
+                    </div>
                 </div>
             </div>
 
             <div class="card-face card-back">
                 <div class="content-area">
                     <div class="large-text" id="back-text">
-                        {{ card.english_gloss }}
+                        {% if card %}
+                            {{ card.english_gloss }}
+                        {% else %}
+                            No more cards due.
+                        {% endif %}
                     </div>
-                    {% if card.translation %}
+
+                    {% if card and card.translation %}
                     <div class="sentence-text" id="back-translation">
                         {{ card.translation }}
                     </div>
                     {% else %}
                     <div class="sentence-text is-hidden" id="back-translation"></div>
                     {% endif %}
-                    <button class="audio-btn" id="back-audio-btn" title="Listen" aria-label="Listen to back of card">🔊</button>
+
+                    <button
+                        class="audio-btn {% if not card %}is-hidden{% endif %}"
+                        id="back-audio-btn"
+                        title="Listen"
+                        aria-label="Listen to back of card"
+                    >
+                        🔊
+                    </button>
                 </div>
-                <div class="button-row">
+
+                <div class="button-row" id="rating-button-row">
                     <button class="card-btn again" data-action="1">
                         Again
                         <span class="btn-label" data-rating-label="1">
-                            {{ card.preview_intervals["1"]["label"] if card.preview_intervals else "" }}
+                            {{ card.preview_intervals["1"]["label"] if card and card.preview_intervals else "" }}
                         </span>
                     </button>
                     <button class="card-btn hard" data-action="2">
                         Hard
                         <span class="btn-label" data-rating-label="2">
-                            {{ card.preview_intervals["2"]["label"] if card.preview_intervals else "" }}
+                            {{ card.preview_intervals["2"]["label"] if card and card.preview_intervals else "" }}
                         </span>
                     </button>
                     <button class="card-btn good" data-action="3">
                         Good
                         <span class="btn-label" data-rating-label="3">
-                            {{ card.preview_intervals["3"]["label"] if card.preview_intervals else "" }}
+                            {{ card.preview_intervals["3"]["label"] if card and card.preview_intervals else "" }}
                         </span>
                     </button>
                     <button class="card-btn easy" data-action="4">
                         Easy
                         <span class="btn-label" data-rating-label="4">
-                            {{ card.preview_intervals["4"]["label"] if card.preview_intervals else "" }}
+                            {{ card.preview_intervals["4"]["label"] if card and card.preview_intervals else "" }}
                         </span>
                     </button>
                 </div>
@@ -133,14 +165,6 @@
         </div>
     </div>
 </div>
-{% else %}
-<div class="wrapper">
-    <div class="empty-state">
-        <h2>🎉 No cards due!</h2>
-        <p>You've reviewed everything that's due. Check back later.</p>
-    </div>
-</div>
-{% endif %}
 
 {# 
   Below is the rating distribution section.
@@ -157,6 +181,27 @@
         </div>
     </div>
     <div class="rating-distribution-text">Ratings Distribution</div>
+</div>
+
+<div class="daily-new-limit-section">
+    <label for="daily-new-limit-input" class="daily-new-limit-label">
+        Daily New Card Limit
+    </label>
+
+    <div class="daily-new-limit-controls">
+        <input
+            type="number"
+            id="daily-new-limit-input"
+            class="daily-new-limit-input"
+            min="0"
+            step="1"
+            value="{{ daily_new_limit }}"
+            inputmode="numeric"
+        >
+        <button type="button" id="daily-new-limit-apply" class="header-btn">
+            Apply
+        </button>
+    </div>
 </div>
 
 <div id="logout-modal" class="modal-overlay is-hidden">
@@ -176,8 +221,10 @@
 {% block extra_js %}
 <script>
     const RATE_URL = "{{ url_for('review.rate_card') }}";
+    const SET_DAILY_NEW_LIMIT_URL = "{{ url_for('review.set_daily_new_limit') }}";
     const CURRENT_REVIEW_STATE_ID = {{ card.review_state_id if card else 'null' }};
     const INITIAL_PREVIEW_INTERVALS = {{ (card.preview_intervals if card else {}) | tojson }};
+    const INITIAL_DAILY_NEW_LIMIT = {{ daily_new_limit }};
     const INITIAL_STATS = {
         total_reviewed: {{ stats.total_reviewed if stats else 0 }},
         counts: {
@@ -188,7 +235,11 @@
         },
         current_streak: {{ stats.current_streak if stats else 0 }},
         max_streak: {{ stats.max_streak if stats else 0 }},
-        cards_due: {{ stats.cards_due if stats else 0 }}
+        cards_due: {{ stats.cards_due if stats else 0 }},
+        new_cards: {{ stats.new_cards if stats else 0 }},
+        learning_cards: {{ stats.learning_cards if stats else 0 }},
+        review_cards: {{ stats.review_cards if stats else 0 }},
+        daily_new_limit: {{ daily_new_limit }}
     };
 </script>
 <script src="{{ url_for('static', filename='js/card.js') }}"></script>

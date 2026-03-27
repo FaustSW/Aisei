@@ -7,9 +7,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const buttons = document.querySelectorAll('.card-btn');
     const frontAudioBtn = document.getElementById('front-audio-btn');
     const backAudioBtn = document.getElementById('back-audio-btn');
+    const ratingButtonRow = document.getElementById('rating-button-row');
+
+    const dailyNewLimitInput = document.getElementById('daily-new-limit-input');
+    const dailyNewLimitApplyBtn = document.getElementById('daily-new-limit-apply');
 
     const initial = (typeof INITIAL_STATS !== 'undefined') ? INITIAL_STATS : {};
     const initialPreviews = (typeof INITIAL_PREVIEW_INTERVALS !== 'undefined') ? INITIAL_PREVIEW_INTERVALS : {};
+    const initialDailyNewLimit = (typeof INITIAL_DAILY_NEW_LIMIT !== 'undefined') ? INITIAL_DAILY_NEW_LIMIT : 10;
 
     const logoutModal = document.getElementById('logout-modal');
     const signOutBtn = document.getElementById('sign-out-btn'); 
@@ -26,8 +31,17 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     let isFlipping = false;
 
+    if (dailyNewLimitInput) {
+        dailyNewLimitInput.value = initialDailyNewLimit;
+    }
+
     updateRatingDistribution();
     updatePreviewLabels(initialPreviews);
+
+    if (!reviewStateId) {
+        setDoneState();
+        disableButtons();
+    }
 
     function speakText(text) {
         if (!window.speechSynthesis || !text.trim()) return;
@@ -78,9 +92,23 @@ document.addEventListener('DOMContentLoaded', () => {
             backTranslation.textContent = nextCard.translation || '';
             backTranslation.style.display = nextCard.translation ? '' : 'none';
         }
+
+        if (frontAudioBtn) {
+            frontAudioBtn.classList.remove('is-hidden');
+        }
+
+        if (backAudioBtn) {
+            backAudioBtn.classList.remove('is-hidden');
+        }
+
+        if (ratingButtonRow) {
+            ratingButtonRow.classList.remove('is-hidden');
+        }
     }
 
     function setDoneState() {
+        flipToFront();
+
         if (frontText) {
             frontText.textContent = '🎉 Done!';
         }
@@ -97,6 +125,78 @@ document.addEventListener('DOMContentLoaded', () => {
         if (backTranslation) {
             backTranslation.textContent = '';
             backTranslation.style.display = 'none';
+        }
+
+        if (frontAudioBtn) {
+            frontAudioBtn.classList.add('is-hidden');
+        }
+
+        if (backAudioBtn) {
+            backAudioBtn.classList.add('is-hidden');
+        }
+
+        if (ratingButtonRow) {
+            ratingButtonRow.classList.add('is-hidden');
+        }
+    }
+
+    function disableButtons() {
+        buttons.forEach(btn => {
+            btn.disabled = true;
+            btn.classList.add('disabled');
+        });
+    }
+
+    function enableButtons() {
+        buttons.forEach(btn => {
+            btn.disabled = false;
+            btn.classList.remove('disabled');
+        });
+    }
+
+    function updatePreviewLabels(previews) {
+        document.querySelectorAll('[data-rating-label]').forEach((el) => {
+            const rating = el.dataset.ratingLabel;
+            el.textContent = (previews[rating] && previews[rating].label) || '';
+        });
+    }
+
+    function syncStats(stats) {
+        reviewCounts = {
+            again: (stats.counts && stats.counts.again) || 0,
+            hard: (stats.counts && stats.counts.hard) || 0,
+            good: (stats.counts && stats.counts.good) || 0,
+            easy: (stats.counts && stats.counts.easy) || 0,
+        };
+
+        updateRatingDistribution();
+
+        const totalNew = document.getElementById('total-new');
+        const totalLearning = document.getElementById('total-learning');
+        const totalReview = document.getElementById('total-review');
+
+        if (totalNew) totalNew.innerText = stats.new_cards || 0;
+        if (totalLearning) totalLearning.innerText = stats.learning_cards || 0;
+        if (totalReview) totalReview.innerText = stats.review_cards || 0;
+
+        if (dailyNewLimitInput && typeof stats.daily_new_limit !== 'undefined') {
+            dailyNewLimitInput.value = stats.daily_new_limit;
+        }
+    }
+
+    function applyNextCardResponse(nextCard) {
+        flipToFront();
+
+        if (nextCard) {
+            setCardContent(nextCard);
+            updatePreviewLabels(nextCard.preview_intervals || {});
+            enableButtons();
+            reviewStateId = nextCard.review_state_id;
+        } else {
+            setDoneState();
+            updatePreviewLabels({});
+            disableButtons();
+            reviewStateId = null;
         }
     }
 
@@ -134,81 +234,70 @@ document.addEventListener('DOMContentLoaded', () => {
                     rating: rating
                 })
             })
-            .then(res => res.json())
-            .then(data => {
-                if (data.error) {
-                    console.error('Rating error:', data.error);
-                    isFlipping = false;
-                    return;
-                }
-
-                if (data.stats) {
-                    syncStats(data.stats);
-                }
-
-                flipToFront();
-
-                setTimeout(() => {
-                    if (data.next_card) {
-                        setCardContent(data.next_card);
-                        updatePreviewLabels(data.next_card.preview_intervals || {});
-                        enableButtons();
-                        reviewStateId = data.next_card.review_state_id;
-                    } else {
-                        setDoneState();
-                        updatePreviewLabels({});
-                        disableButtons();
-                        reviewStateId = null;
+                .then(res => res.json())
+                .then(data => {
+                    if (data.error) {
+                        console.error('Rating error:', data.error);
+                        isFlipping = false;
+                        return;
                     }
 
+                    if (data.stats) {
+                        syncStats(data.stats);
+                    }
+
+                    applyNextCardResponse(data.next_card);
                     isFlipping = false;
-                }, 400);
-            })
-            .catch(err => {
-                console.error('Request failed:', err);
-                isFlipping = false;
-            });
+                })
+                .catch(err => {
+                    console.error('Request failed:', err);
+                    isFlipping = false;
+                });
         });
     });
 
-    function disableButtons() {
-        buttons.forEach(btn => {
-            btn.disabled = true;
-            btn.classList.add('disabled');
-        });
-    }
+    if (dailyNewLimitApplyBtn && dailyNewLimitInput) {
+        const submitDailyNewLimit = () => {
+            const rawValue = dailyNewLimitInput.value.trim();
+            const parsed = parseInt(rawValue, 10);
 
-    function enableButtons() {
-        buttons.forEach(btn => {
-            btn.disabled = false;
-            btn.classList.remove('disabled');
-        });
-    }
+            if (Number.isNaN(parsed)) {
+                dailyNewLimitInput.value = initialDailyNewLimit;
+                return;
+            }
 
-    function updatePreviewLabels(previews) {
-        document.querySelectorAll('[data-rating-label]').forEach((el) => {
-            const rating = el.dataset.ratingLabel;
-            el.textContent = (previews[rating] && previews[rating].label) || '';
-        });
-    }
+            fetch(SET_DAILY_NEW_LIMIT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    daily_new_limit: parsed,
+                })
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.error) {
+                        console.error('Daily new limit error:', data.error);
+                        return;
+                    }
 
-    function syncStats(stats) {
-        reviewCounts = {
-            again: (stats.counts && stats.counts.again) || 0,
-            hard:  (stats.counts && stats.counts.hard)  || 0,
-            good:  (stats.counts && stats.counts.good)  || 0,
-            easy:  (stats.counts && stats.counts.easy)  || 0,
+                    if (typeof data.daily_new_limit !== 'undefined') {
+                        dailyNewLimitInput.value = data.daily_new_limit;
+                    }
+
+                    window.location.reload();
+                })
+                .catch(err => {
+                    console.error('Request failed:', err);
+                });
         };
 
-        updateRatingDistribution();
+        dailyNewLimitApplyBtn.addEventListener('click', submitDailyNewLimit);
 
-        const totalNew = document.getElementById('total-new');
-        const totalLearning = document.getElementById('total-learning');
-        const totalReview = document.getElementById('total-review');
-
-        if (totalNew) totalNew.innerText = stats.new_cards || 0;
-        if (totalLearning) totalLearning.innerText = stats.learning_cards || 0;
-        if (totalReview) totalReview.innerText = stats.review_cards || 0;
+        dailyNewLimitInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                submitDailyNewLimit();
+            }
+        });
     }
 
     if (signOutBtn) {

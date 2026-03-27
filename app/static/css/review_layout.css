@@ -1,34 +1,56 @@
 /* Container for the New/Learning/Review totals */
 .daily-totals-container {
-    display: flex; 
-    justify-content: center; 
-    gap: 40px; 
-    margin-top: 30px; 
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    margin-top: 30px;
     margin-bottom: 10px;
 }
 
 .total-item-new {
-    color: #3498db; 
+    color: #3498db;
     font-weight: bold;
 }
 
 .total-item-learning {
-    color: #f39c12; 
+    color: #f39c12;
     font-weight: bold;
 }
 
 .total-item-review {
-    color: #2ecc71; 
+    color: #2ecc71;
     font-weight: bold;
 }
 
-/* State for hidden elements (sentences/translations) */
-.is-hidden {
-    display: none;
+.daily-new-limit-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    margin-top: 18px;
 }
 
-/* Style for the "No cards due" message */
-.empty-state {
-    text-align: center; 
-    padding: 40px;
+.daily-new-limit-label {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-main, #333);
+}
+
+.daily-new-limit-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.daily-new-limit-input {
+    width: 90px;
+    height: 42px;
+    box-sizing: border-box;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid #cfcfcf;
+    font-size: 1rem;
+    font-weight: 600;
+    text-align: center;
+    font-family: inherit;
 }

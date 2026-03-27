@@ -27,6 +27,7 @@ from app.models.user import User
 from app.models.review_state import ReviewState
 from app.models.generated_card import GeneratedCard
 from app.services.scheduler_adapter import SchedulerAdapter
+from app.services.settings_service import create_default_user_settings
 
 SEED_VOCAB_FILE = os.path.join("data", "seed_vocab.json")
 SEED_CARDS_FILE = os.path.join("data", "seed_generated_cards.json")
@@ -35,11 +36,12 @@ _scheduler = SchedulerAdapter()
 
 
 def seed_default_user():
-    """Create the default Demo User if it doesn't already exist."""
+    """Create the default Demo User and settings if they don't already exist."""
     session = get_session()
     try:
         existing = session.exec(select(User).where(User.username == "demo_user")).first()
         if existing:
+            create_default_user_settings(existing.id, db_session=session)
             print("Default user already exists.")
             return
 
@@ -51,6 +53,10 @@ def seed_default_user():
         )
         session.add(user)
         session.commit()
+        session.refresh(user)
+
+        create_default_user_settings(user.id, db_session=session)
+
         print("Created default user: Demo User (demo_user)")
     finally:
         session.close()

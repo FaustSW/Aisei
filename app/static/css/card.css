@@ -225,6 +225,13 @@ body {
     transform: rotateY(180deg);
 }
 
+.card-btn.disabled,
+.card-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
 /* ==========================================================================
    CARD CONTENT & BUTTONS
    ========================================================================== */
@@ -433,10 +440,6 @@ button.audio-btn:hover {
 
 .modal-actions button {
     flex: 1;
-}
-
-.is-hidden {
-    display: none !important;
 }
 
 /* ==========================================================================

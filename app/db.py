@@ -49,6 +49,7 @@ def init_db():
     # imported into Python's memory. Without these, create_all
     # silently creates zero tables. Don't remove them.
     import app.models.user           # registers "user" table
+    import app.models.user_settings   # registers "user_settings" table
     import app.models.vocab          # registers "vocab" table
     import app.models.review_state   # registers "review_state" table
     import app.models.generated_card # registers "generated_card" table
