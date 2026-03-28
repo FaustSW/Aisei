@@ -108,7 +108,10 @@ function handleLogin() {
     return;
   }
 
-  const password = document.getElementById("passwordInput").value;
+  const passwordInput = document.getElementById("passwordInput");
+  const password = passwordInput.value;
+  const passwordError = document.getElementById("passwordError");
+  const apiModal = document.getElementById("API-data-modal");
 
   fetch("/login", {
     method: "POST",
@@ -121,18 +124,39 @@ function handleLogin() {
     .then((res) => res.json())
     .then((data) => {
       if (data.ok) {
-        document.getElementById("passwordError").classList.remove("show");
+        // 1. Clear any previous errors
+        passwordError.classList.remove("show");
         showMessage(`✅ Welcome, ${selectedProfile.name}!`, "success");
-        window.location.href = "/go_to_review";
+
+        // 2. Decide: Go straight to review OR show the optional setup
+        if (data.has_keys) {
+          // Everything is ready, proceed immediately
+          window.location.href = "/go_to_review";
+        } else {
+          // Keys are missing. Show the modal so they CAN add them,
+          // but allow them to skip it.
+          apiModal.classList.remove("is-hidden");
+
+          // We update the 'Cancel' button to act as a 'Skip' button 
+          // to make it clear they aren't stuck here.
+          const skipBtn = apiModal.querySelector(".btn-cancel");
+          if (skipBtn) {
+            skipBtn.textContent = "Skip for Now";
+            skipBtn.onclick = () => {
+              window.location.href = "/go_to_review";
+            };
+          }
+        }
       } else {
-        document.getElementById("passwordError").classList.add("show");
-        document.getElementById("passwordInput").value = "";
-        document.getElementById("passwordInput").focus();
+        // 3. Handle Authentication Failure
+        passwordError.classList.add("show");
+        passwordInput.value = "";
+        passwordInput.focus();
       }
     })
     .catch((error) => {
       console.error("Error:", error);
-      showMessage("Error logging in", "error");
+      showMessage("Error connecting to server", "error");
     });
 }
 
@@ -140,6 +164,46 @@ function showMessage(text, type) {
   const messageDiv = document.getElementById("message");
   messageDiv.textContent = text;
   messageDiv.className = `message ${type}`;
+}
+
+function saveAPIKeys() {
+    const openaiKey = document.getElementById("newOpenAIKey").value.trim();
+    const elevenlabsKey = document.getElementById("ElevenLabsKey").value.trim();
+
+    // If both are empty, we just treat it as a "Skip"
+    if (!openaiKey && !elevenlabsKey) {
+        window.location.href = "/go_to_review";
+        return;
+    }
+
+    const saveBtn = document.querySelector("#API-data-modal .btn-create");
+    saveBtn.textContent = "Saving...";
+    saveBtn.disabled = true;
+
+    fetch("/save_api_keys", { 
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            openai_key: openaiKey,    // Could be an empty string ""
+            elevenlabs_key: elevenlabsKey // Could be an empty string ""
+        }),
+    })
+    .then((res) => res.json())
+    .then((data) => {
+        if (data.ok) {
+            // Once saved, proceed to the app
+            window.location.href = "/go_to_review";
+        } else {
+            alert("Error saving keys: " + (data.error || "Unknown error"));
+            saveBtn.textContent = "Save & Continue";
+            saveBtn.disabled = false;
+        }
+    })
+    .catch((err) => {
+        console.error("Error:", err);
+        alert("Failed to reach server.");
+        saveBtn.disabled = false;
+    });
 }
 
 /* ============================================================================================================== */
@@ -205,6 +269,14 @@ document
 /* ============================================================================================================== */
 /* EXTRA */
 /* ============================================================================================================== */
+// Add this to your login page JS
+
+window.addEventListener('click', (e) => {
+    const apiModal = document.getElementById('API-data-modal');
+    if (e.target === apiModal) {
+        apiModal.classList.add('is-hidden');
+    }
+});
 
 window.onclick = function (event) {
   const modal = document.getElementById("addProfileModal");

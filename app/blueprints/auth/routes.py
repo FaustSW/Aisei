@@ -12,7 +12,7 @@ Routes:
     GET  /go_to_review - redirect to review page (requires session)
     GET  /logout       - clear session, redirect to login
 """
-import json
+import json, keyring
 
 from flask import Blueprint, render_template, request, redirect, url_for, session, jsonify
 
@@ -23,6 +23,8 @@ from app.services.auth_service import (
     get_profiles_list,
 )
 
+
+APP_ID = "SeniorCapstone_Anki"
 auth_bp = Blueprint("auth", __name__, template_folder="templates")
 
 
@@ -48,8 +50,19 @@ def login():
 
     session["user_id"] = user.id
     session["user"] = user.username
-    return jsonify({"ok": True, "user_id": user.id, "username": user.username})
 
+    elevenlabs_key = keyring.get_password(APP_ID, f"{user.username}_elevenlabs")
+    openai_key = keyring.get_password(APP_ID, f"{user.username}_openai")
+
+    # We only consider "has_keys" True if both are present
+    has_keys = bool(elevenlabs_key and openai_key)
+
+    return jsonify({
+        "ok": True, 
+        "user_id": user.id, 
+        "username": user.username,
+        "has_keys": has_keys  
+    })
 
 @auth_bp.route("/create_user", methods=["POST"])
 def create_user():
@@ -89,6 +102,25 @@ def delete_user():
         return jsonify({"error": str(e)}), 404
 
     return jsonify({"ok": True})
+
+@auth_bp.route("/save_api_keys", methods=["POST"])
+def save_api_keys():
+    data = request.get_json(force=True)
+    openai = data.get("openai_key", "").strip()
+    eleven = data.get("elevenlabs_key", "").strip()
+    
+    username = session.get("user")
+    
+    try:
+        # Only save if the string isn't empty
+        if openai:
+            keyring.set_password(APP_ID, f"{username}_openai", openai)
+        if eleven:
+            keyring.set_password(APP_ID, f"{username}_elevenlabs", eleven)
+            
+        return jsonify({"ok": True})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)})
 
 
 @auth_bp.route("/go_to_review")
