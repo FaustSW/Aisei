@@ -43,28 +43,55 @@ document.addEventListener('DOMContentLoaded', () => {
         disableButtons();
     }
 
-    function speakText(text) {
-        if (!window.speechSynthesis || !text.trim()) return;
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(text.trim());
-        window.speechSynthesis.speak(utterance);
-    }
+// 1. Replace the old speakText with this API-driven version
+async function speakWithElevenLabs(text, voiceId) {
+    if (!text || !text.trim()) return;
 
-    if (frontAudioBtn) {
-        frontAudioBtn.addEventListener('click', () => {
-            const parts = [frontText?.textContent, frontSentence?.textContent]
-                .filter(t => t && t.trim());
-            speakText(parts.join('. '));
+    try {
+        // We call our Flask route instead of the browser's TTS engine
+        const response = await fetch('/review/generate_audio', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                text: text.trim(),
+                voice_id: voiceId
+            })
         });
-    }
 
-    if (backAudioBtn) {
-        backAudioBtn.addEventListener('click', () => {
-            const parts = [backText?.textContent, backTranslation?.textContent]
-                .filter(t => t && t.trim());
-            speakText(parts.join('. '));
-        });
+        const data = await response.json();
+
+        if (data.success && data.audio_url) {
+            // Play the file returned by the server
+            const audio = new Audio(data.audio_url);
+            audio.play();
+        } else {
+            console.error('ElevenLabs Error:', data.error);
+        }
+    } catch (err) {
+        console.error('Failed to communicate with audio service:', err);
     }
+}
+
+// 2. Update the event listeners to use the new function
+if (frontAudioBtn) {
+    frontAudioBtn.addEventListener('click', () => {
+        const parts = [frontText?.textContent, frontSentence?.textContent]
+            .filter(t => t && t.trim());
+        
+        // Using ID: U9jmr7kY6mMqS39kfA01 for the front
+        speakWithElevenLabs(parts.join('. '), "U9jmr7kY6mMqS39kfA01");
+    });
+}
+
+if (backAudioBtn) {
+    backAudioBtn.addEventListener('click', () => {
+        const parts = [backText?.textContent, backTranslation?.textContent]
+            .filter(t => t && t.trim());
+        
+        // Using ID: rixsIpPlTphvsJd2mI03 for the back
+        speakWithElevenLabs(parts.join('. '), "rixsIpPlTphvsJd2mI03");
+    });
+}
 
     function flipCard() {
         if (cardInner) cardInner.classList.toggle('is-flipped');

@@ -25,6 +25,9 @@ from app.services.settings_service import (
     update_daily_new_limit,
 )
 from app.services.stats_service import get_session_stats
+from app.services.generation_service import (
+    handle_audio_generation
+)
 
 
 review_bp = Blueprint("review", __name__, template_folder="templates")
@@ -77,6 +80,41 @@ def rate_card():
         "next_card": next_card,
         "stats": stats,
     })
+
+# Currently testing ElevenLabs integration through a dedicated route
+# This should run when the audio button in the card area is pressed
+@review_bp.route("/generate_audio", methods=["POST"])
+def generate_audio():
+    """Receives text from JS, calls generation service, returns audio URL."""
+    username = session.get("user")
+    if not username:
+        return jsonify({"error": "User not authenticated"}), 401
+
+    data = request.get_json(force=True)
+    text = data.get("text")
+    voice_id = data.get("voice_id")
+
+    if not text:
+        return jsonify({"error": "No text provided"}), 400
+
+    try:
+        # Link to your Generation Service
+        from app.services.generation_service import handle_audio_generation
+        
+        # This function (built in previous step) triggers the ElevenLabsClient
+        audio_url = handle_audio_generation(
+            username=username,
+            text=text,
+            voice_id=voice_id
+        )
+
+        return jsonify({
+            "success": True,
+            "audio_url": audio_url
+        })
+
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
 @review_bp.route("/set_daily_new_limit", methods=["POST"])

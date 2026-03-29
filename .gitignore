@@ -29,3 +29,6 @@ htmlcov/
 
 # Logs
 *.log
+
+# Generated Audio
+app/static/audio
