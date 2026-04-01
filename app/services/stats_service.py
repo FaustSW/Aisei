@@ -10,9 +10,13 @@ Current responsibilities:
 - Count unique cards reviewed today
 - Compute current / max streak for today
 - Count cards due right now
+- Compute long-term progression metrics (all-time reviews, mastered cards,
+  daily streaks, weekly review history, accuracy rate)
 """
 
 from __future__ import annotations
+
+from datetime import timedelta
 
 from sqlmodel import select, col
 
@@ -107,19 +111,12 @@ def get_session_stats(user_id: int) -> dict:
         current_streak = 0
         max_streak = 0
         seen_review_state_ids = set()
+        latest_ratings: dict[int, int] = {}
 
-        # Only count each card's first review of the day toward the progress bar
-        # and streak. Re-reviews of the same card (e.g., learning steps) are
-        # intentionally skipped so the numbers match how many distinct cards
-        # the user has worked through today.
         for review in reviews:
             is_first_review_today = review.review_state_id not in seen_review_state_ids
             if is_first_review_today:
                 seen_review_state_ids.add(review.review_state_id)
-
-                name = rating_map.get(review.rating)
-                if name:
-                    counts[name] += 1
 
                 if review.rating in (3, 4):
                     current_streak += 1
@@ -127,6 +124,14 @@ def get_session_stats(user_id: int) -> dict:
                         max_streak = current_streak
                 else:
                     current_streak = 0
+
+            # Always overwrite so only the most recent rating per card is counted
+            latest_ratings[review.review_state_id] = review.rating
+
+        for rating in latest_ratings.values():
+            name = rating_map.get(rating)
+            if name:
+                counts[name] += 1
 
         return {
             "total_reviewed": len(seen_review_state_ids),
@@ -138,6 +143,100 @@ def get_session_stats(user_id: int) -> dict:
             "learning_cards": len(learning_cards),
             "review_cards": len(review_cards),
             "daily_new_limit": daily_new_limit,
+        }
+    finally:
+        db_session.close()
+
+
+def get_long_term_stats(user_id: int) -> dict:
+    
+    db_session = get_session()
+    try:
+        now = get_simulated_now()
+        today_start, tomorrow_start = get_today_window(now)
+
+        all_logs = db_session.exec(
+            select(ReviewLog)
+            .where(ReviewLog.user_id == user_id)
+            .order_by(col(ReviewLog.reviewed_at).asc())
+        ).all()
+
+        all_states = db_session.exec(
+            select(ReviewState).where(ReviewState.user_id == user_id)
+        ).all()
+
+        total_reviews = len(all_logs)
+
+        # Cards that have graduated into spaced-repetition Review state
+        total_mastered = sum(1 for rs in all_states if rs.scheduler_state == 2)
+        total_lapses = sum(rs.lapses for rs in all_states)
+
+        # Accuracy: share of Good/Easy ratings across all review events
+        if total_reviews > 0:
+            good_easy_count = sum(1 for log in all_logs if log.rating in (3, 4))
+            accuracy_rate = round(good_easy_count / total_reviews * 100)
+        else:
+            accuracy_rate = 0
+
+        # Build a set of UTC dates that have at least one review
+        review_dates: set = set()
+        for log in all_logs:
+            reviewed_at = as_utc(log.reviewed_at)
+            if reviewed_at:
+                review_dates.add(reviewed_at.date())
+
+        # Current daily streak: consecutive days ending today (or yesterday if today has no reviews)
+        today_date = today_start.date()
+        current_daily_streak = 0
+        check_date = today_date
+        while check_date in review_dates:
+            current_daily_streak += 1
+            check_date -= timedelta(days=1)
+
+        # Longest ever daily streak
+        if review_dates:
+            sorted_dates = sorted(review_dates)
+            longest_daily_streak = 1
+            run = 1
+            for i in range(1, len(sorted_dates)):
+                if sorted_dates[i] == sorted_dates[i - 1] + timedelta(days=1):
+                    run += 1
+                    if run > longest_daily_streak:
+                        longest_daily_streak = run
+                else:
+                    run = 1
+        else:
+            longest_daily_streak = 0
+
+        # Weekly review counts: 8 consecutive 7-day buckets ending at tomorrow_start
+        # (so today's reviews are included in the most recent bucket)
+        weekly_counts = []
+        for week_offset in range(7, -1, -1):
+            bucket_end = tomorrow_start - timedelta(weeks=week_offset)
+            bucket_start = bucket_end - timedelta(weeks=1)
+            count = sum(
+                1 for log in all_logs
+                if bucket_start <= as_utc(log.reviewed_at) < bucket_end
+            )
+            weekly_counts.append(count)
+
+        # Average daily reviews over the last 30 days
+        thirty_days_ago = today_start - timedelta(days=30)
+        recent_count = sum(
+            1 for log in all_logs
+            if as_utc(log.reviewed_at) >= thirty_days_ago
+        )
+        avg_daily_30 = round(recent_count / 30, 1)
+
+        return {
+            "total_reviews": total_reviews,
+            "total_mastered": total_mastered,
+            "current_daily_streak": current_daily_streak,
+            "longest_daily_streak": longest_daily_streak,
+            "weekly_counts": weekly_counts,
+            "avg_daily_30": avg_daily_30,
+            "total_lapses": total_lapses,
+            "accuracy_rate": accuracy_rate,
         }
     finally:
         db_session.close()

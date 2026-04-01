@@ -19,6 +19,7 @@
 
 <div class="stats">
     <button type="button" id="sign-out-btn" class="stat-btn btn-logout">Sign Out</button>
+    <a href="{{ url_for('stats.stats') }}" class="stat-btn btn-stats">Stats</a>
 </div>
 
 <div class="sim-time-header">
@@ -101,7 +102,7 @@
                         {% if card %}
                             Press Space or Click Sides to Flip
                         {% else %}
-                            No more cards due.
+                            <a href="{{ url_for('stats.stats') }}" class="done-stats-link">View your stats &#8594;</a>
                         {% endif %}
                     </div>
                 </div>

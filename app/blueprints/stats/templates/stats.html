@@ -1,12 +1,9 @@
 {# 
 Statistics Template
 
-Placeholder stats page.
-
-Future versions should render computed statistics from stats_service
-(e.g., due count, reviews completed, streaks).
-
-Required by spec, but lower priority early on.
+Two-section layout:
+  1. Long-term progression (all-time metrics + weekly chart)
+  2. Daily recap (today's metrics, rating distribution, "all done" banner)
 #}
 
 {% extends "base.html" %}
@@ -20,49 +17,144 @@ Required by spec, but lower priority early on.
 
 {% block content %}
 <div class="page-actions">
-    {#
-      We prompt the user if they're sure they want to exit in review.html, 
-      so here we can just link to the logout route instead of adding a button to go back to the review page.
-      <a href="{{ url_for('review.generate_cards') }}" class="page-btn btn-back">&#8592; Go Back</a>
-    #}
-    <a href="{{ url_for('auth.logout') }}" class="page-btn btn-logout">Exit</a>
+    <a href="{{ url_for('review.generate_cards') }}" class="page-btn btn-back">&#8592; Back to Review</a>
+    <a href="{{ url_for('auth.logout') }}" class="page-btn btn-logout">Sign Out</a>
 </div>
 
 <div class="container">
 
     <h1 class="stats-title">Statistics</h1>
 
-    <div class="stats-grid">
-        <div class="stat-card">
-            <h2>Cards Due Now</h2>
-            <p class="stat-number">{{ stats.cards_due }}</p>
+    {# ── Long-term progression ── #}
+    <section class="stats-section">
+        <h2 class="section-heading">Overall Progress</h2>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h2>Cards Mastered</h2>
+                <p class="stat-number">{{ long_term.total_mastered }}</p>
+            </div>
+
+            <div class="stat-card">
+                <h2>Total Reviews</h2>
+                <p class="stat-number">{{ long_term.total_reviews }}</p>
+            </div>
+
+            <div class="stat-card">
+                <h2>Current Daily Streak</h2>
+                <p class="stat-number">{{ long_term.current_daily_streak }}
+                    <span class="stat-unit">days</span>
+                </p>
+            </div>
+
+            <div class="stat-card">
+                <h2>Longest Daily Streak</h2>
+                <p class="stat-number">{{ long_term.longest_daily_streak }}
+                    <span class="stat-unit">days</span>
+                </p>
+            </div>
+
+            <div class="stat-card">
+                <h2>Avg Daily (30d)</h2>
+                <p class="stat-number">{{ long_term.avg_daily_30 }}</p>
+            </div>
+
+            <div class="stat-card">
+                <h2>Accuracy Rate</h2>
+                <p class="stat-number">{{ long_term.accuracy_rate }}<span class="stat-unit">%</span></p>
+            </div>
         </div>
 
-        <div class="stat-card">
-            <h2>Cards Reviewed Today</h2>
-            <p class="stat-number">{{ stats.total_reviewed }}</p>
+        {# Weekly bar chart – last 8 weeks, oldest on the left #}
+        <div class="weekly-chart-wrapper">
+            <h3 class="chart-heading">Reviews per Week (last 8 weeks)</h3>
+            <div class="weekly-chart">
+                {% set max_week = long_term.weekly_counts | max if long_term.weekly_counts else 1 %}
+                {% set safe_max = max_week if max_week > 0 else 1 %}
+                {% for count in long_term.weekly_counts %}
+                <div class="week-bar-group">
+                    <div class="week-bar-fill"
+                         style="height: {{ ((count / safe_max) * 100) | round | int }}%"
+                         title="{{ count }} reviews"></div>
+                    <span class="week-bar-label">{{ count }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    {# ── Daily recap ── #}
+    <section class="stats-section">
+        <h2 class="section-heading">Today's Recap</h2>
+
+        {% if stats.cards_due == 0 %}
+        <div class="all-done-banner">
+            🎉 All reviews done for today — great work!
+        </div>
+        {% endif %}
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h2>Cards Reviewed Today</h2>
+                <p class="stat-number">{{ stats.total_reviewed }}</p>
+            </div>
+
+            <div class="stat-card">
+                <h2>Total Cards Left</h2>
+                <p class="stat-number">{{ stats.cards_due }}</p>
+            </div>
+
+            <div class="stat-card">
+                <h2>Today's Streak</h2>
+                <p class="stat-number">{{ stats.current_streak }}</p>
+            </div>
+
+            <div class="stat-card">
+                <h2>New Cards Left</h2>
+                <p class="stat-number">{{ stats.new_cards }}</p>
+            </div>
+
+            <div class="stat-card">
+                <h2>Still Learning</h2>
+                <p class="stat-number">{{ stats.learning_cards }}</p>
+            </div>
+
+            <div class="stat-card">
+                <h2>Can Review</h2>
+                <p class="stat-number">{{ stats.review_cards }}</p>
+            </div>
         </div>
 
-        <div class="stat-card">
-            <h2>Current Streak</h2>
-            <p class="stat-number">{{ stats.current_streak }}</p>
+        {# Rating distribution bar #}
+        {% set total_ratings = stats.counts.again + stats.counts.hard + stats.counts.good + stats.counts.easy %}
+        {% if total_ratings > 0 %}
+        <div class="daily-rating-section">
+            <h3 class="chart-heading">Rating Distribution</h3>
+            <div class="rating-distribution-container">
+                <div class="rating-distribution-bar">
+                    <div class="rating-distribution-segment segment-again"
+                         style="width: {{ ((stats.counts.again / total_ratings) * 100) | round | int }}%"
+                         title="Again: {{ stats.counts.again }}"></div>
+                    <div class="rating-distribution-segment segment-hard"
+                         style="width: {{ ((stats.counts.hard / total_ratings) * 100) | round | int }}%"
+                         title="Hard: {{ stats.counts.hard }}"></div>
+                    <div class="rating-distribution-segment segment-good"
+                         style="width: {{ ((stats.counts.good / total_ratings) * 100) | round | int }}%"
+                         title="Good: {{ stats.counts.good }}"></div>
+                    <div class="rating-distribution-segment segment-easy"
+                         style="width: {{ ((stats.counts.easy / total_ratings) * 100) | round | int }}%"
+                         title="Easy: {{ stats.counts.easy }}"></div>
+                </div>
+            </div>
+            <div class="rating-legend">
+                <span class="legend-item legend-again">Again: {{ stats.counts.again }}</span>
+                <span class="legend-item legend-hard">Hard: {{ stats.counts.hard }}</span>
+                <span class="legend-item legend-good">Good: {{ stats.counts.good }}</span>
+                <span class="legend-item legend-easy">Easy: {{ stats.counts.easy }}</span>
+            </div>
         </div>
-
-        <div class="stat-card">
-            <h2>New Due Today</h2>
-            <p class="stat-number">{{ stats.new_cards }}</p>
-        </div>
-
-        <div class="stat-card">
-            <h2>Learning Due Today</h2>
-            <p class="stat-number">{{ stats.learning_cards }}</p>
-        </div>
-
-        <div class="stat-card">
-            <h2>Review Due Today</h2>
-            <p class="stat-number">{{ stats.review_cards }}</p>
-        </div>
-    </div>
+        {% endif %}
+    </section>
 
 </div>
 {% endblock %}

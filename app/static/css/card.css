@@ -80,6 +80,51 @@ body {
     min-height: 30px;
 }
 
+/* Shared style for small action buttons in the stats bar */
+.stat-btn {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: bold;
+    text-align: center;
+    cursor: pointer;
+    border: none;
+    text-decoration: none;
+    transition: opacity 0.2s, transform 0.1s;
+    color: var(--text-main);
+    background: transparent;
+}
+
+.stat-btn:hover {
+    opacity: 0.8;
+    transform: translateY(-1px);
+}
+
+.btn-stats {
+    background: var(--primary-gradient, linear-gradient(135deg, #667eea, #764ba2));
+    color: white;
+}
+
+
+/* "View your stats" link shown on the done card face */
+.done-stats-link {
+    display: inline-block;
+    padding: 8px 18px;
+    border-radius: 8px;
+    background: var(--primary-gradient, linear-gradient(135deg, #667eea, #764ba2));
+    color: white;
+    font-weight: bold;
+    font-size: 0.95rem;
+    text-decoration: none;
+    transition: opacity 0.2s, transform 0.1s;
+}
+
+.done-stats-link:hover {
+    opacity: 0.85;
+    transform: translateY(-1px);
+}
+
 /* ==========================================================================
    SIMULATED TIME CONTROLS
    ========================================================================== */

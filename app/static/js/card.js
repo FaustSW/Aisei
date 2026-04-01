@@ -165,6 +165,12 @@ if (backAudioBtn) {
         if (ratingButtonRow) {
             ratingButtonRow.classList.add('is-hidden');
         }
+
+        // Show a link to the stats page in the front card's label area
+        const frontLabel = document.querySelector('.card-front .btn-label');
+        if (frontLabel) {
+            frontLabel.innerHTML = '<a href="/stats/" class="done-stats-link">View your stats &#8594;</a>';
+        }
     }
 
     function disableButtons() {
@@ -212,18 +218,31 @@ if (backAudioBtn) {
     }
 
     function applyNextCardResponse(nextCard) {
-        flipToFront();
+        function applyContent() {
+            if (nextCard) {
+                setCardContent(nextCard);
+                updatePreviewLabels(nextCard.preview_intervals || {});
+                enableButtons();
+                reviewStateId = nextCard.review_state_id;
+            } else {
+                setDoneState();
+                updatePreviewLabels({});
+                disableButtons();
+                reviewStateId = null;
+            }
+            isFlipping = false;
+        }
 
-        if (nextCard) {
-            setCardContent(nextCard);
-            updatePreviewLabels(nextCard.preview_intervals || {});
-            enableButtons();
-            reviewStateId = nextCard.review_state_id;
+        if (cardInner && cardInner.classList.contains('is-flipped')) {
+            cardInner.addEventListener('transitionend', function handler(e) {
+                if (e.propertyName !== 'transform') return;
+                cardInner.removeEventListener('transitionend', handler);
+                applyContent();
+            });
+            flipToFront();
         } else {
-            setDoneState();
-            updatePreviewLabels({});
-            disableButtons();
-            reviewStateId = null;
+            flipToFront();
+            applyContent();
         }
     }
 
@@ -274,7 +293,6 @@ if (backAudioBtn) {
                     }
 
                     applyNextCardResponse(data.next_card);
-                    isFlipping = false;
                 })
                 .catch(err => {
                     console.error('Request failed:', err);
@@ -353,7 +371,7 @@ if (backAudioBtn) {
 
     if (modalConfirm) {
         modalConfirm.addEventListener('click', () => {
-            window.location.href = "/review/go_to_stats"; 
+            window.location.href = "/logout";
         });
     }
 
