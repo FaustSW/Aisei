@@ -47,6 +47,11 @@ function selectProfile(profile, event) {
     card.classList.remove("selected");
   });
 
+  const loginModal = document.querySelector('.password-section');
+    if (loginModal) {
+        loginModal.classList.remove('is-hidden');
+    }
+
   event.currentTarget.classList.add("selected");
   document.getElementById("selectedProfileName").textContent =
     `Enter password for ${profile.name}`;
