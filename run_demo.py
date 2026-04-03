@@ -8,12 +8,12 @@ Usage:
     python run_demo.py
 """
 
+import os
 import subprocess
 import sys
-import os
 import threading
-import webbrowser
 import time
+import webbrowser
 
 # Make sure we're running from the project root regardless of where
 # the user calls "python run.py" from
@@ -45,12 +45,17 @@ def setup_database():
     init_db()
 
     print("Seeding default data...")
-    from scripts.seed_db import seed_default_user, seed_vocab, seed_review_states, seed_generated_cards
+    from scripts.seed_db import seed_default_user, seed_vocab, seed_review_states
+
     seed_default_user()
     seed_vocab()
     seed_review_states()
-    seed_generated_cards()
     print("Database seeded.")
+
+    print(
+        "GeneratedCards are now created lazily on first review-page access "
+        "for users who have a saved OpenAI API key."
+    )
 
 
 def open_browser():
@@ -62,7 +67,11 @@ def open_browser():
 def start_app():
     """Start the Flask development server."""
     import importlib.util
-    spec = importlib.util.spec_from_file_location("app_module", os.path.join(os.path.dirname(__file__), "app.py"))
+
+    spec = importlib.util.spec_from_file_location(
+        "app_module",
+        os.path.join(os.path.dirname(__file__), "app.py"),
+    )
     app_module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(app_module)
     flask_app = app_module.app

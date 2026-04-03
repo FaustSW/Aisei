@@ -20,7 +20,9 @@ from app.db import get_session
 from app.models.generated_card import GeneratedCard
 from app.models.review_log import ReviewLog
 from app.models.review_state import ReviewState
+from app.models.user import User
 from app.models.vocab import Vocab
+from app.services.generation_service import ensure_generated_card_for_review_state
 from app.services.queue_service import (
     get_next_review_state,
     get_queue_bucket,
@@ -79,12 +81,35 @@ def get_next_card(user_id: int) -> Optional[dict]:
     """
     Return the next card for this user to review, or None if nothing is
     available now or later today.
+
+    If the next ReviewState has no GeneratedCard yet, attempt lazy generation
+    using the logged-in user's saved OpenAI API key.
     """
     db_session = get_session()
     try:
+        user = db_session.get(User, user_id)
+        if user is None:
+            raise ValueError(f"User {user_id} not found")
+
         review_state = get_next_review_state(db_session, user_id)
         if review_state is None:
             return None
+
+        if review_state.current_generated_card_id is None:
+            try:
+                ensure_generated_card_for_review_state(
+                    db_session=db_session,
+                    username=user.username,
+                    review_state=review_state,
+                )
+                db_session.refresh(review_state)
+            except Exception as e:
+                # For now, fail soft. The card can still render term/gloss even if
+                # AI generation is unavailable or the user's OpenAI key is missing.
+                print(
+                    f"[review_service] lazy generation failed for "
+                    f"user={user.username!r}, review_state_id={review_state.id}: {e}"
+                )
 
         return _build_card_payload(db_session, review_state)
     finally:
