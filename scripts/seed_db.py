@@ -63,7 +63,7 @@ def seed_default_user():
 
 def seed_vocab():
     """Read seed_vocab.json and insert any missing vocab records."""
-    with open(SEED_VOCAB_FILE, "r") as f:
+    with open(SEED_VOCAB_FILE, "r", encoding="utf-8") as f:
         entries = json.load(f)
 
     session = get_session()
