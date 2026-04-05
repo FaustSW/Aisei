@@ -19,7 +19,7 @@ themes_bp = Blueprint('themes', __name__)
 
 # Load theme definitions once at import time from the adjacent JSON file.
 _themes_path = os.path.join(os.path.dirname(__file__), 'themes.json')
-with open(_themes_path, 'r') as f:
+with open(_themes_path, 'r', encoding='utf-8') as f:
     themes = json.load(f)
 
 DEFAULT_THEME = 'light'
