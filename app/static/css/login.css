@@ -300,7 +300,7 @@ button:hover {
 .modal {
     display: none;
     position: fixed;
-    z-index: 1;
+    z-index: 10000;
     left: 0;
     top: 0;
     width: 100%;
@@ -330,7 +330,6 @@ button:hover {
     margin-bottom: 20px;
     text-align: center;
 }
-
 
 .form-group {
     margin-bottom: 20px;
@@ -392,7 +391,7 @@ button:hover {
     display: flex;             /* This centers the child (modal-content) */
     justify-content: center;   /* Horizontal centering */
     align-items: center;       /* Vertical centering */
-    z-index: 2000;             /* Sits above everything else */
+    z-index: 1000;             /*sits above the main content but below the modal */
     backdrop-filter: blur(4px);
 }
 
@@ -403,9 +402,16 @@ button:hover {
     min-width: 320px;
     max-width: 450px;
     padding: 24px;
+    z-index: 10001; /* sits above the overlay */
     background: var(--card-bg); /* Uses your theme colors */
     border-radius: 15px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.glass-panel {
+    background: rgba(255, 255, 255, 0.9) !important; /* 90% opaque white */
+    backdrop-filter: blur(10px); /* This makes the 'glass' effect pop */
+    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .is-hidden {
