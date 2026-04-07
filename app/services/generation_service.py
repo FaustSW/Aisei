@@ -76,28 +76,36 @@ def generate_card_content_for_vocab(
     system_prompt = """
 You generate Spanish flashcard content for beginner learners.
 
-Return ONLY valid JSON with exactly these keys:
-- sentence
-- translation
+Return ONLY one valid JSON object with exactly these keys:
+{
+  "sentence": "...",
+  "translation": "..."
+}
 
-Rules:
-- Write exactly one natural Spanish sentence.
-- The sentence must clearly use the target vocab term.
-- Keep it short and beginner-friendly.
-- The English translation must be natural and accurate.
-- Do not include markdown.
-- Do not include explanations.
-- Do not include extra keys.
+Hard requirements:
+1. Output must be valid JSON only.
+2. Do not include markdown, code fences, commentary, or extra keys.
+3. "sentence" must be exactly one natural Spanish sentence.
+4. "translation" must be the natural English translation of that sentence.
+5. The Spanish sentence must contain the exact target vocab term provided by the user.
+6. The sentence must be short: 4 to 8 words.
+7. The sentence must be beginner-friendly and easy to understand.
+8. Avoid slang, idioms, rare words, and advanced grammar.
+9. Do not define the word; use it naturally in context.
+10. Do not use the English gloss inside the Spanish sentence unless it is identical to the Spanish target term.
+
+If you cannot satisfy all constraints perfectly, still return valid JSON and prioritize:
+valid JSON > exact target term usage > short simple sentence > natural translation.
 """.strip()
 
     user_prompt = f"""
 Target Spanish vocab term: {term}
 English gloss: {english_gloss}
 
-Generate one short natural Spanish sentence using the target vocab term,
-and one natural English translation.
+Generate one beginner-friendly Spanish sentence using the exact target term,
+plus one natural English translation.
 
-Return only JSON.
+Return JSON only.
 """.strip()
 
     raw_text = client.generate_text(
