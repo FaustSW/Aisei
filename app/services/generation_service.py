@@ -116,18 +116,45 @@ Return JSON only.
 
     data = _extract_json_object(raw_text)
 
+    allowed_keys = {"sentence", "translation"}
+    actual_keys = set(data.keys())
+    if actual_keys != allowed_keys:
+        raise ValueError(
+            f"Model returned unexpected keys. Expected {allowed_keys}, got {actual_keys}"
+        )
+
     sentence = str(data.get("sentence", "")).strip()
     translation = str(data.get("translation", "")).strip()
 
     if not sentence:
         raise ValueError(f"Generated sentence was empty for term {term!r}")
+
     if not translation:
         raise ValueError(f"Generated translation was empty for term {term!r}")
 
-    return {
-        "sentence": sentence,
-        "translation": translation,
-    }
+    if "```" in sentence or "```" in translation:
+        raise ValueError("Generated content contained markdown/code fences")
+
+    normalized_sentence = sentence.lower()
+    normalized_term = term.lower()
+
+    if normalized_term not in normalized_sentence:
+        raise ValueError(
+            f"Generated sentence did not contain target term {term!r}: {sentence!r}"
+        )
+
+    word_count = len(sentence.split())
+    if word_count < 4 or word_count > 8:
+        raise ValueError(
+            f"Generated sentence length out of bounds ({word_count} words): {sentence!r}"
+        )
+
+    sentence_enders = sentence.count(".") + sentence.count("!") + sentence.count("?")
+    if sentence_enders > 1:
+        raise ValueError(f"Generated output was not exactly one sentence: {sentence!r}")
+
+    if sentence.lower() == translation.lower():
+        raise ValueError("Sentence and translation should not be identical")
 
 
 def ensure_generated_card_for_review_state(
