@@ -235,7 +235,7 @@ if (backAudioBtn) {
 
         if (cardInner && cardInner.classList.contains('is-flipped')) {
             cardInner.addEventListener('transitionend', function handler(e) {
-                if (e.propertyName !== 'transform') return;
+                if (e.propertyName !== 'transform' || e.target !== cardInner) return;
                 cardInner.removeEventListener('transitionend', handler);
                 applyContent();
             });

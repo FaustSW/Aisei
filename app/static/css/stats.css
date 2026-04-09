@@ -121,11 +121,7 @@ body {
     text-align: center;
 }
 
-/* ── Weekly bar chart ── */
-.weekly-chart-wrapper {
-    margin-top: 8px;
-}
-
+/*  Chart heading (shared)  */
 .chart-heading {
     font-size: 0.9rem;
     font-weight: 600;
@@ -135,39 +131,194 @@ body {
     margin: 0 0 12px;
 }
 
-.weekly-chart {
-    display: flex;
-    align-items: flex-end;
-    gap: 8px;
-    height: 120px;
-    padding: 0 4px;
+/*  Period chart wrapper  */
+.period-chart-wrapper {
+    margin-top: 8px;
 }
 
-.week-bar-group {
-    flex: 1;
+.period-chart-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+/*  Period selector buttons  */
+.period-btn-group {
+    display: flex;
+    gap: 6px;
+}
+
+.period-btn {
+    padding: 6px 14px;
+    border: 2px solid var(--primary, #667eea);
+    border-radius: 20px;
+    background: transparent;
+    color: var(--text-main, #222);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.18s, color 0.18s, transform 0.1s;
+}
+
+.period-btn:hover {
+    background: var(--primary, #667eea);
+    color: #fff;
+    transform: translateY(-1px);
+}
+
+.period-btn.active {
+    background: var(--primary-gradient, linear-gradient(135deg, #667eea, #764ba2));
+    color: #fff;
+    border-color: transparent;
+}
+
+/*  Summary row (avg / sessions)  */
+.period-summary {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    font-size: 0.85rem;
+    color: var(--text-muted, #666);
+    margin-bottom: 10px;
+}
+
+.period-summary-item strong {
+    color: var(--text-main, #222);
+    font-weight: 700;
+}
+
+/*  Legend (shared + period override)  */
+.rating-legend {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.legend-item { padding: 2px 6px; border-radius: 4px; }
+.legend-again { background: #fde8e7; color: #c0392b; }
+.legend-hard  { background: #fef3e0; color: #d68910; }
+.legend-good  { background: #e8f8f0; color: #1e8449; }
+.legend-easy  { background: #e8f4fd; color: #1a6fa0; }
+
+.period-legend {
+    margin-bottom: 12px;
+}
+
+/*  Stacked bar chart  */
+.period-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    height: 180px;
+    padding: 0 4px 4px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+}
+
+.period-chart-loading,
+.period-chart-empty {
+    width: 100%;
+    text-align: center;
+    font-size: 0.9rem;
+    color: var(--text-muted, #888);
+    padding: 40px 0;
+    align-self: center;
+}
+
+.period-bar-group {
+    flex: 1 0 56px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: flex-end;
     height: 100%;
-    gap: 4px;
+    gap: 3px;
 }
 
-.week-bar-fill {
+
+.period-bar-stack {
     width: 100%;
-    min-height: 4px;
-    background: var(--primary-gradient, linear-gradient(135deg, #667eea, #764ba2));
+    max-width: 48px;
+    display: flex;
+    flex-direction: column-reverse;
     border-radius: 4px 4px 0 0;
+    overflow: hidden;
+    transition: height 0.4s ease;
+    min-height: 2px;
+}
+
+.period-bar-segment {
+    width: 100%;
     transition: height 0.4s ease;
 }
 
-.week-bar-label {
-    font-size: 0.7rem;
+
+.period-bar-segment.segment-again { background: #e74c3c; }
+.period-bar-segment.segment-hard  { background: #f39c12; }
+.period-bar-segment.segment-good  { background: #2ecc71; }
+.period-bar-segment.segment-easy  { background: #3498db; }
+
+.period-bar-total {
+    font-size: 0.65rem;
     color: var(--text-muted, #777);
+    font-weight: 600;
+    line-height: 1;
+}
+
+.period-bar-label {
+    font-size: 0.6rem;
+    color: var(--text-muted, #777);
+    text-align: center;
+    line-height: 1.3;
+    word-break: keep-all;
+}
+
+/*  Accuracy comparison  */
+.accuracy-comparison {
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+.accuracy-row {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.accuracy-today {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.accuracy-pct {
+    font-size: 2rem;
+    font-weight: bold;
+    color: var(--text-main, #222);
+}
+
+.accuracy-delta {
+    font-size: 0.9rem;
     font-weight: 600;
 }
 
-/* ── Rating distribution (daily recap) ── */
+.delta-positive {
+    color: #1e8449;
+}
+
+.delta-negative {
+    color: #c0392b;
+}
+
+/*  Rating distribution (daily recap)  */
 .daily-rating-section {
     margin-top: 20px;
 }
@@ -197,21 +348,7 @@ body {
 .segment-good  { background: #2ecc71; }
 .segment-easy  { background: #3498db; }
 
-.rating-legend {
-    display: flex;
-    gap: 16px;
-    flex-wrap: wrap;
-    font-size: 0.8rem;
-    font-weight: 600;
-}
-
-.legend-item { padding: 2px 6px; border-radius: 4px; }
-.legend-again { background: #fde8e7; color: #c0392b; }
-.legend-hard  { background: #fef3e0; color: #d68910; }
-.legend-good  { background: #e8f8f0; color: #1e8449; }
-.legend-easy  { background: #e8f4fd; color: #1a6fa0; }
-
-/* ── Responsive ── */
+/*  Responsive  */
 @media (max-width: 768px) {
     .stats-grid {
         grid-template-columns: repeat(2, 1fr);
@@ -221,8 +358,13 @@ body {
         font-size: 1.8rem;
     }
 
-    .weekly-chart {
-        height: 80px;
+    .period-chart {
+        height: 140px;
+    }
+
+    .period-chart-header {
+        flex-direction: column;
+        align-items: flex-start;
     }
 
     .page-actions {

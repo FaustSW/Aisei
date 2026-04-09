@@ -16,7 +16,7 @@ Current responsibilities:
 
 from __future__ import annotations
 
-from datetime import timedelta
+from datetime import timedelta, date
 
 from sqlmodel import select, col
 
@@ -143,6 +143,15 @@ def get_session_stats(user_id: int) -> dict:
             "learning_cards": len(learning_cards),
             "review_cards": len(review_cards),
             "daily_new_limit": daily_new_limit,
+            "today_accuracy": (
+                round(
+                    sum(1 for r in latest_ratings.values() if r in (3, 4))
+                    / len(latest_ratings)
+                    * 100
+                )
+                if latest_ratings
+                else None
+            ),
         }
     finally:
         db_session.close()
@@ -237,6 +246,122 @@ def get_long_term_stats(user_id: int) -> dict:
             "avg_daily_30": avg_daily_30,
             "total_lapses": total_lapses,
             "accuracy_rate": accuracy_rate,
+        }
+    finally:
+        db_session.close()
+
+
+def get_period_stats(user_id: int, period: str) -> dict:
+    """
+    Return per-week rating distribution, avg cards/day, and session count
+    for the requested time window.
+
+    period values:
+        '1m'  – last 30 days  (4 complete weeks + partial current week)
+        '3m'  – last 90 days  (12 complete weeks + partial current week)
+        'all' – every week since the user's first review
+
+    Returns a dict with:
+        weeks        - list of {label, again, hard, good, easy} (oldest first)
+        avg_per_day  - average reviews per calendar day in the window
+        sessions     - number of distinct days that had at least one review
+    """
+    db_session = get_session()
+    try:
+        now = get_simulated_now()
+        today_start, tomorrow_start = get_today_window(now)
+
+        all_logs = db_session.exec(
+            select(ReviewLog)
+            .where(ReviewLog.user_id == user_id)
+            .order_by(col(ReviewLog.reviewed_at).asc())
+        ).all()
+
+        if not all_logs:
+            return {"weeks": [], "avg_per_day": 0, "sessions": 0}
+
+        if period == "1m":
+            window_days = 30
+            window_start = today_start - timedelta(days=window_days - 1)
+        elif period == "3m":
+            window_days = 90
+            window_start = today_start - timedelta(days=window_days - 1)
+        else:
+            # All time – start from the day of the earliest review
+            first_log_dt = as_utc(all_logs[0].reviewed_at)
+            first_day_start = first_log_dt.replace(
+                hour=0, minute=0, second=0, microsecond=0
+            ) if first_log_dt else today_start
+            window_start = first_day_start
+            window_days = max((today_start - window_start).days + 1, 1)
+
+        # Filter logs to the window
+        window_logs = [
+            log for log in all_logs
+            if as_utc(log.reviewed_at) >= window_start
+        ]
+
+        # Snap back to the Sunday on or before window_start so every bucket
+        # begins on Sunday.  Python weekday(): Mon=0 … Sun=6.
+        days_since_sunday = (window_start.weekday() + 1) % 7
+        first_sunday = window_start - timedelta(days=days_since_sunday)
+
+        # Build Sunday-aligned week buckets up to (but not including) tomorrow.
+        week_boundaries = []
+        cursor = first_sunday
+        while cursor < tomorrow_start:
+            week_end = cursor + timedelta(weeks=1)
+            week_boundaries.append((cursor, min(week_end, tomorrow_start)))
+            cursor = week_end
+
+        rating_map = {1: "again", 2: "hard", 3: "good", 4: "easy"}
+
+        def _fmt_day(dt) -> str:
+            """Return e.g. 'Apr 5' from a datetime."""
+            return f"{dt.strftime('%b')} {dt.day}"
+
+        # Deduplicate: keep only the last rating per (card, calendar day).
+        # window_logs is ordered by reviewed_at ascending, so later entries
+        # overwrite earlier ones, leaving the final outcome for each card-day.
+        last_rating_per_card_day: dict[tuple, int] = {}
+        for log in window_logs:
+            dt = as_utc(log.reviewed_at)
+            if dt:
+                key = (log.review_state_id, dt.date())
+                last_rating_per_card_day[key] = log.rating
+
+        weeks = []
+        for bucket_start, bucket_end in week_boundaries:
+            # Last calendar day of the bucket (bucket_end is exclusive midnight)
+            last_day = bucket_end - timedelta(days=1)
+            bucket_label = f"{_fmt_day(bucket_start)} – {_fmt_day(last_day)}"
+            bucket_start_date = bucket_start.date()
+            bucket_end_date = bucket_end.date()
+            counts = {"again": 0, "hard": 0, "good": 0, "easy": 0}
+            for (rs_id, log_date), rating in last_rating_per_card_day.items():
+                if bucket_start_date <= log_date < bucket_end_date:
+                    name = rating_map.get(rating)
+                    if name:
+                        counts[name] += 1
+            weeks.append({"label": bucket_label, **counts})
+
+        # Sessions = distinct calendar days within window that had a review
+        review_dates: set[date] = set()
+        for log in window_logs:
+            dt = as_utc(log.reviewed_at)
+            if dt:
+                review_dates.add(dt.date())
+        sessions = len(review_dates)
+
+        total_in_window = sum(
+            w["again"] + w["hard"] + w["good"] + w["easy"] for w in weeks
+        )
+        avg_per_day = round(total_in_window / window_days, 1)
+
+        return {
+            "weeks": weeks,
+            "avg_per_day": avg_per_day,
+            "sessions": sessions,
         }
     finally:
         db_session.close()

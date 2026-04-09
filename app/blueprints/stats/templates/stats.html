@@ -2,8 +2,8 @@
 Statistics Template
 
 Two-section layout:
-  1. Long-term progression (all-time metrics + weekly chart)
-  2. Daily recap (today's metrics, rating distribution, "all done" banner)
+  1. Daily recap (today's metrics, rating distribution, accuracy comparison)
+  2. Long-term progression (all-time metrics + interactive period chart)
 #}
 
 {% extends "base.html" %}
@@ -24,64 +24,6 @@ Two-section layout:
 <div class="container">
 
     <h1 class="stats-title">Statistics</h1>
-
-    {# ── Long-term progression ── #}
-    <section class="stats-section">
-        <h2 class="section-heading">Overall Progress</h2>
-
-        <div class="stats-grid">
-            <div class="stat-card">
-                <h2>Cards Mastered</h2>
-                <p class="stat-number">{{ long_term.total_mastered }}</p>
-            </div>
-
-            <div class="stat-card">
-                <h2>Total Reviews</h2>
-                <p class="stat-number">{{ long_term.total_reviews }}</p>
-            </div>
-
-            <div class="stat-card">
-                <h2>Current Daily Streak</h2>
-                <p class="stat-number">{{ long_term.current_daily_streak }}
-                    <span class="stat-unit">days</span>
-                </p>
-            </div>
-
-            <div class="stat-card">
-                <h2>Longest Daily Streak</h2>
-                <p class="stat-number">{{ long_term.longest_daily_streak }}
-                    <span class="stat-unit">days</span>
-                </p>
-            </div>
-
-            <div class="stat-card">
-                <h2>Avg Daily (30d)</h2>
-                <p class="stat-number">{{ long_term.avg_daily_30 }}</p>
-            </div>
-
-            <div class="stat-card">
-                <h2>Accuracy Rate</h2>
-                <p class="stat-number">{{ long_term.accuracy_rate }}<span class="stat-unit">%</span></p>
-            </div>
-        </div>
-
-        {# Weekly bar chart – last 8 weeks, oldest on the left #}
-        <div class="weekly-chart-wrapper">
-            <h3 class="chart-heading">Reviews per Week (last 8 weeks)</h3>
-            <div class="weekly-chart">
-                {% set max_week = long_term.weekly_counts | max if long_term.weekly_counts else 1 %}
-                {% set safe_max = max_week if max_week > 0 else 1 %}
-                {% for count in long_term.weekly_counts %}
-                <div class="week-bar-group">
-                    <div class="week-bar-fill"
-                         style="height: {{ ((count / safe_max) * 100) | round | int }}%"
-                         title="{{ count }} reviews"></div>
-                    <span class="week-bar-label">{{ count }}</span>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-    </section>
 
     {# ── Daily recap ── #}
     <section class="stats-section">
@@ -125,6 +67,22 @@ Two-section layout:
             </div>
         </div>
 
+        {# ── Accuracy comparison ── #}
+        {% if stats.today_accuracy is not none %}
+        {% set delta = stats.today_accuracy - long_term.accuracy_rate %}
+        <div class="accuracy-comparison">
+            <h3 class="chart-heading">Today's Accuracy</h3>
+            <div class="accuracy-row">
+                <div class="accuracy-today">
+                    <span class="accuracy-pct">{{ stats.today_accuracy }}%</span>
+                    <span class="accuracy-delta {% if delta >= 0 %}delta-positive{% else %}delta-negative{% endif %}">
+                        ({{ '%+d' | format(delta) }}% vs your {{ long_term.accuracy_rate }}% average)
+                    </span>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
         {# Rating distribution bar #}
         {% set total_ratings = stats.counts.again + stats.counts.hard + stats.counts.good + stats.counts.easy %}
         {% if total_ratings > 0 %}
@@ -156,5 +114,88 @@ Two-section layout:
         {% endif %}
     </section>
 
+    {# ── Long-term progression ── #}
+    <section class="stats-section">
+        <h2 class="section-heading">Overall Progress</h2>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h2>Cards Mastered</h2>
+                <p class="stat-number">{{ long_term.total_mastered }}</p>
+            </div>
+
+            <div class="stat-card">
+                <h2>Total Reviews</h2>
+                <p class="stat-number">{{ long_term.total_reviews }}</p>
+            </div>
+
+            <div class="stat-card">
+                <h2>Current Daily Streak</h2>
+                <p class="stat-number">{{ long_term.current_daily_streak }}
+                    <span class="stat-unit">days</span>
+                </p>
+            </div>
+
+            <div class="stat-card">
+                <h2>Longest Daily Streak</h2>
+                <p class="stat-number">{{ long_term.longest_daily_streak }}
+                    <span class="stat-unit">days</span>
+                </p>
+            </div>
+
+            <div class="stat-card">
+                <h2>Avg Daily (30d)</h2>
+                <p class="stat-number">{{ long_term.avg_daily_30 }}</p>
+            </div>
+
+            <div class="stat-card">
+                <h2>Accuracy Rate</h2>
+                <p class="stat-number">{{ long_term.accuracy_rate }}<span class="stat-unit">%</span></p>
+            </div>
+        </div>
+
+        {# ── Period bar chart ── #}
+        <div class="period-chart-wrapper">
+            <div class="period-chart-header">
+                <h3 class="chart-heading">Review Distribution</h3>
+                <div class="period-btn-group" role="group" aria-label="Time period">
+                    <button class="period-btn active" data-period="1m">1 Month</button>
+                    <button class="period-btn" data-period="3m">3 Months</button>
+                    <button class="period-btn" data-period="all">All Time</button>
+                </div>
+            </div>
+
+            {# Summary row #}
+            <div class="period-summary">
+                <span class="period-summary-item">
+                    Avg per day: <strong id="period-avg-per-day">—</strong>
+                </span>
+                <span class="period-summary-item">
+                    Sessions: <strong id="period-sessions">—</strong>
+                </span>
+            </div>
+
+            {# Chart legend #}
+            <div class="rating-legend period-legend">
+                <span class="legend-item legend-again">Again</span>
+                <span class="legend-item legend-hard">Hard</span>
+                <span class="legend-item legend-good">Good</span>
+                <span class="legend-item legend-easy">Easy</span>
+            </div>
+
+            {# Chart canvas #}
+            <div class="period-chart" id="period-chart">
+                <div class="period-chart-loading">Loading…</div>
+            </div>
+        </div>
+    </section>
+
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const HISTORY_URL = "{{ url_for('stats.history') }}";
+</script>
+<script src="{{ url_for('static', filename='js/stats.js') }}"></script>
 {% endblock %}
