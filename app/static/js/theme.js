@@ -1,142 +1,166 @@
 // ==============================================================================================================
-// THEME SWITCHER - Load and apply themes
+// INITIALIZATION - Runs on page load
 // ==============================================================================================================
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM loaded, starting theme setup...');
+    console.log('Initializing Seisei Settings...');
+    
+    // 1. Always load themes (Public)
     loadThemes();
     loadSavedTheme();
+
+    // 2. Only load voices/settings if the elements exist (Gated)
+    if (document.getElementById('voice-dropdown')) {
+        loadVoices();
+        loadSavedVoice();
+    }
+
+    setupModalLogic();
 });
 
 // ==============================================================================================================
-// LOAD THEMES - Fetch all themes from backend
+// THEME LOGIC
 // ==============================================================================================================
 
-function loadThemes() {
-    console.log('Fetching themes...');
-    fetch('/api/themes')
-        .then(response => {
-            console.log('Response status:', response.status);
-            return response.json();
-        })
-        .then(themesList => {
-            console.log('Themes loaded:', themesList);
-            const dropdown = document.getElementById('theme-dropdown');
-            if (!dropdown) {
-                console.error('Dropdown element not found!');
-                return;
-            }
+async function loadThemes() {
+    const dropdown = document.getElementById('theme-dropdown');
+    if (!dropdown) return;
 
-            dropdown.innerHTML = '';
+    try {
+        const response = await fetch('/settings/themes'); 
+        const themesList = await response.json();
 
-            themesList.forEach(theme => {
-                const option = document.createElement('option');
-                option.value = theme.id;
-                option.textContent = theme.name;
-                dropdown.appendChild(option);
-            });
-
-            console.log('Dropdown populated with', themesList.length, 'themes');
-
-            const savedTheme = localStorage.getItem('selectedTheme');
-            if (savedTheme) {
-                dropdown.value = savedTheme;
-            }
-        })
-        .catch(error => {
-            console.error('Error loading themes:', error);
-            const dropdown = document.getElementById('theme-dropdown');
-            if (dropdown) {
-                dropdown.innerHTML = '<option value="">Error loading themes</option>';
-            }
+        dropdown.innerHTML = '';
+        themesList.forEach(theme => {
+            const option = document.createElement('option');
+            option.value = theme.id;
+            option.textContent = theme.name;
+            dropdown.appendChild(option);
         });
-}
 
-// ==============================================================================================================
-// CHANGE THEME - When user selects from dropdown
-// ==============================================================================================================
+        const savedTheme = localStorage.getItem('selectedTheme');
+        if (savedTheme) dropdown.value = savedTheme;
+
+    } catch (error) {
+        console.error('Error loading themes:', error);
+        dropdown.innerHTML = '<option value="">Error loading themes</option>';
+    }
+}
 
 function changeTheme() {
     const dropdown = document.getElementById('theme-dropdown');
-    if (!dropdown) {
-        console.error('Dropdown element not found!');
-        return;
-    }
+    const themeId = dropdown?.value;
+    if (!themeId) return;
 
-    const themeId = dropdown.value;
-
-    if (!themeId) {
-        console.log('No theme selected');
-        return;
-    }
-
-    console.log('Changing to theme:', themeId);
-
-    fetch(`/api/theme/${themeId}`)
+    fetch(`/settings/theme/${themeId}`)
         .then(response => response.json())
         .then(theme => {
-            console.log('Theme data received:', theme);
             applyTheme(theme);
-            saveThemePreference(themeId);
-        })
-        .catch(error => console.error('Error loading theme:', error));
+            localStorage.setItem('selectedTheme', themeId);
+            fetch('/settings/save-theme', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ theme_id: themeId })
+            });
+        });
 }
-
-// ==============================================================================================================
-// APPLY THEME - Change the body class to apply theme
-// ==============================================================================================================
 
 function applyTheme(theme) {
-    console.log('Applying theme with class:', theme.class);
+    if (!theme.class) return;
     document.body.className = document.body.className.replace(/\btheme-\S+/g, '').trim();
-
-    if (theme.class) {
-        document.body.classList.add(theme.class);
-    }
+    document.body.classList.add(theme.class);
 }
-
-// ==============================================================================================================
-// SAVE THEME PREFERENCE - Store user's choice
-// ==============================================================================================================
-
-function saveThemePreference(themeId) {
-    localStorage.setItem('selectedTheme', themeId);
-
-    fetch('/api/save-theme', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ theme_id: themeId })
-    })
-    .catch(error => console.error('Error saving theme:', error));
-}
-
-// ==============================================================================================================
-// LOAD SAVED THEME - Restore user's previously selected theme
-// ==============================================================================================================
 
 function loadSavedTheme() {
     const savedTheme = localStorage.getItem('selectedTheme');
-    console.log('Saved theme from localStorage:', savedTheme);
-
     if (!savedTheme) {
         document.body.style.visibility = 'visible';
         return;
     }
 
-    fetch(`/api/theme/${savedTheme}`)
+    fetch(`/settings/theme/${savedTheme}`)
         .then(response => response.json())
-        .then(theme => {
-            applyTheme(theme);
+        .then(theme => applyTheme(theme))
+        .finally(() => document.body.style.visibility = 'visible');
+}
 
-            const dropdown = document.getElementById('theme-dropdown');
-            if (dropdown) {
-                dropdown.value = savedTheme;
-            }
-        })
-        .catch(error => console.error('Error loading saved theme:', error))
-        .finally(() => {
-            document.body.style.visibility = 'visible';
+// ==============================================================================================================
+// VOICE LOGIC (Gated)
+// ==============================================================================================================
+
+async function loadVoices() {
+    const dropdown = document.getElementById('voice-dropdown');
+    if (!dropdown) return;
+
+    try {
+        const response = await fetch('/settings/voices'); 
+        const voicesList = await response.json();
+
+        dropdown.innerHTML = '';
+        voicesList.forEach(voice => {
+            const option = document.createElement('option');
+            option.value = voice.id;
+            option.textContent = voice.name;
+            dropdown.appendChild(option);
         });
+
+        const savedVoice = localStorage.getItem('selectedVoice');
+        if (savedVoice) dropdown.value = savedVoice;
+    } catch (error) {
+        console.error('Error loading voices:', error);
+    }
+}
+
+function changeVoice() {
+    const dropdown = document.getElementById('voice-dropdown');
+    const voiceId = dropdown?.value;
+    if (!voiceId) return;
+
+    localStorage.setItem('selectedVoice', voiceId);
+    fetch('/settings/save-voice', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ voice_id: voiceId })
+    });
+}
+
+// ==============================================================================================================
+// MODAL LOGIC
+// ==============================================================================================================
+
+function setupModalLogic() {
+    console.log('setupModalLogic running, wrapper:', document.querySelector('.settings'), 'modal:', document.getElementById('settings-modal'));
+    // ... rest of function
+    const settingsBtn = document.getElementById('settings-btn');
+    const settingsModal = document.getElementById('settings-modal');
+    const cancelBtn = document.querySelector('#settings-modal .btn-cancel');
+
+    // Attach listener to the wrapper div since it sits on top of the button
+    const settingsWrapper = settingsBtn?.closest('.settings');
+    if (settingsWrapper && settingsModal) {
+        settingsWrapper.addEventListener('click', () => settingsModal.classList.remove('is-hidden'));
+    }
+
+    if (settingsBtn && settingsModal) {
+        settingsBtn.addEventListener('click', () => settingsModal.classList.remove('is-hidden'));
+    }
+
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent the wrapper click from re-opening it
+            settingsModal.classList.add('is-hidden');
+        });
+    }
+
+    window.addEventListener('click', (e) => {
+        if (e.target === settingsModal) settingsModal.classList.add('is-hidden');
+    });
+}
+
+function loadSavedVoice() {
+    const dropdown = document.getElementById('voice-dropdown');
+    if (!dropdown) return;
+
+    const savedVoice = localStorage.getItem('selectedVoice');
+    if (savedVoice) dropdown.value = savedVoice;
 }

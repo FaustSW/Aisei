@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Anki Clone{% endblock %}</title>
 
-    <!-- Global CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
 
     <script>
@@ -14,70 +13,93 @@
             if (!savedTheme) {
                 return;
             }
-
             document.write('<style>body{visibility:hidden;}</style>');
         })();
     </script>
-
-    <style>
-        .theme-selector {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 999;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            background: var(--bg-card);
-            padding: 8px 12px;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            min-height: 30px;
-        }
-
-        .theme-selector label {
-            font-weight: bold;
-            white-space: nowrap;
-            color: var(--text-main);
-            font-size: 12px;
-        }
-
-        .theme-selector select {
-            padding: 6px 8px;
-            border-radius: 4px;
-            border: 2px solid var(--primary);
-            cursor: pointer;
-            font-size: 12px;
-            background-color: var(--bg-card);
-            color: var(--text-main);
-        }
-
-        .theme-selector select:hover {
-            background-color: var(--primary);
-            color: white;
-        }
-    </style>
 
     {% block extra_css %}{% endblock %}
 </head>
 
 <body>
-    <!-- THEME SELECTOR (functional - powered by theme.js) -->
-    <div class="theme-selector">
-        <label for="theme-dropdown">Theme:</label>
-        <select id="theme-dropdown" onchange="changeTheme()">
-            <option value="">Loading...</option>
-        </select>
+    <div class="settings">
+        <button type="button" id="settings-btn" class="settings-btn show-settings">Settings</button>
     </div>
 
-    <!-- PAGE CONTENT - every child template fills this -->
+    <div id="settings-modal" class="settings-modal-overlay modal-overlay is-hidden">
+    <div class="modal-content glass-panel">
+        <h2>Settings</h2>
+
+        <div class="settings-option-group">
+            <label class="settings-option-label">Theme</label>
+            <div class="theme-selector">
+                <select id="theme-dropdown" onchange="changeTheme()">
+                    <option value="">Loading...</option>
+                </select>
+            </div>
+        </div>
+
+        <hr class="settings-divider">
+
+        {% if session.user_id %}
+            <div class="settings-option-group">
+                <label class="settings-option-label">Simulated Time</label>
+                <div class="sim-time-top-controls">
+                    <div id="sim-time-display" class="sim-time-display"></div>
+                    <button id="start-sim-time-btn" class="header-btn">Start Simulated Time</button>
+                    <div id="sim-time-controls" class="sim-time-controls is-hidden">
+                        <button id="sim-time-minus" class="header-btn sim-time-small-btn">-1</button>
+                        <button id="sim-time-plus" class="header-btn sim-time-small-btn">+1</button>
+                        <div class="sim-time-input-group">
+                            <input type="number" id="sim-time-custom" class="sim-time-input" placeholder="Days" inputmode="numeric">
+                            <button id="sim-time-apply" class="sim-time-apply-btn">➤</button>
+                        </div>
+                        <button id="sim-time-reset" class="header-btn">Reset</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-option-group">
+                <label class="settings-option-label" for="daily-new-limit-input">Daily New Card Limit</label>
+                <div class="daily-new-limit-controls">
+                    <input
+                        type="number"
+                        id="daily-new-limit-input"
+                        class="daily-new-limit-input"
+                        min="0"
+                        value="{{ daily_new_limit or 20 }}"
+                    >
+                    <button type="button" id="daily-new-limit-apply" class="header-btn">Apply</button>
+                </div>
+            </div>
+
+            <div class="settings-option-group">
+                <label class="settings-option-label" for="voice-dropdown">TTS Voice</label>
+                <select id="voice-dropdown" onchange="changeVoice()">
+                    <option value="">Loading...</option>
+                </select>
+            </div>
+
+        {% else %}
+            <div class="guest-notice">
+                <p>Log in to access simulated time, daily limits, and custom TTS voices.</p>
+            </div>
+        {% endif %}
+
+        <div class="modal-actions">
+            <button type="button" class="glass-button btn-cancel">Close</button>
+            {% if session.user_id %}
+                <button type="button" class="glass-button btn-create" onclick="saveAPIKeys()">Save & Continue</button>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
     <main>
         {% block content %}{% endblock %}
     </main>
 
-    <!-- Global JS -->
     <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
-
+    <script src="{{ url_for('static', filename='js/sim_time.js') }}"></script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>

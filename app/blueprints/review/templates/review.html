@@ -22,32 +22,6 @@
     <a href="{{ url_for('stats.stats') }}" class="stat-btn btn-stats">Stats</a>
 </div>
 
-<div class="sim-time-header">
-    <div id="sim-time-display" class="sim-time-display"></div>
-
-    <div class="sim-time-top-controls">
-        <button id="start-sim-time-btn" class="header-btn">Start Simulated Time</button>
-
-        <div id="sim-time-controls" class="sim-time-controls is-hidden">
-            <button id="sim-time-minus" class="header-btn sim-time-small-btn">-1</button>
-            <button id="sim-time-plus" class="header-btn sim-time-small-btn">+1</button>
-
-            <div class="sim-time-input-group">
-                <input
-                    type="number"
-                    id="sim-time-custom"
-                    class="sim-time-input"
-                    placeholder="Days"
-                    inputmode="numeric"
-                >
-                <button id="sim-time-apply" class="sim-time-apply-btn" aria-label="Apply days change">➤</button>
-            </div>
-
-            <button id="sim-time-reset" class="header-btn">Reset to Real Time</button>
-        </div>
-    </div>
-</div>
-
 <div class="daily-totals daily-totals-container">
     <div class="total-item-new">
         New: <span id="total-new">{{ stats.new_cards if stats else 0 }}</span>
@@ -184,27 +158,6 @@
     <div class="rating-distribution-text">Ratings Distribution</div>
 </div>
 
-<div class="daily-new-limit-section">
-    <label for="daily-new-limit-input" class="daily-new-limit-label">
-        Daily New Card Limit
-    </label>
-
-    <div class="daily-new-limit-controls">
-        <input
-            type="number"
-            id="daily-new-limit-input"
-            class="daily-new-limit-input"
-            min="0"
-            step="1"
-            value="{{ daily_new_limit }}"
-            inputmode="numeric"
-        >
-        <button type="button" id="daily-new-limit-apply" class="header-btn">
-            Apply
-        </button>
-    </div>
-</div>
-
 <div id="logout-modal" class="modal-overlay is-hidden">
     <div class="modal-content glass-panel">
         <h2 id="modal-title">Sign Out</h2>
@@ -221,11 +174,16 @@
 
 {% block extra_js %}
 <script>
+    // These URLs must match BlueprintName.FunctionName
     const RATE_URL = "{{ url_for('review.rate_card') }}";
-    const SET_DAILY_NEW_LIMIT_URL = "{{ url_for('review.set_daily_new_limit') }}";
+    const SET_DAILY_NEW_LIMIT_URL = "{{ url_for('themes.set_daily_new_limit') }}";
+    
+    // Core state data
     const CURRENT_REVIEW_STATE_ID = {{ card.review_state_id if card else 'null' }};
     const INITIAL_PREVIEW_INTERVALS = {{ (card.preview_intervals if card else {}) | tojson }};
     const INITIAL_DAILY_NEW_LIMIT = {{ daily_new_limit }};
+    
+    // Stats object for the frontend dashboard
     const INITIAL_STATS = {
         total_reviewed: {{ stats.total_reviewed if stats else 0 }},
         counts: {

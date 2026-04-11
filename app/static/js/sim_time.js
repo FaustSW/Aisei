@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', function () {
     let realTimeInterval = null;
 
     startBtn.addEventListener('click', function () {
-        fetch('/review/start_sim_time', { method: 'POST' })
+        fetch('/settings/start_sim_time', { method: 'POST' })
             .then(res => res.json())
             .then(data => {
                 stopRealTimeClock();
@@ -46,7 +46,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     resetBtn.addEventListener('click', function () {
-        fetch('/review/reset_sim_time', { method: 'POST' })
+        fetch('/settings/reset_sim_time', { method: 'POST' })
             .then(res => res.json())
             .then(() => {
                 setSimModeUI(false);
@@ -55,7 +55,7 @@ document.addEventListener('DOMContentLoaded', function () {
             });
     });
 
-    fetch('/review/check_sim_time', { method: 'GET' })
+    fetch('/settings/check_sim_time', { method: 'GET' })
         .then(res => res.json())
         .then(data => {
             if (data.active) {
@@ -68,7 +68,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
     function adjustSimTime(days) {
-        fetch('/review/adjust_sim_time', {
+        fetch('/settings/adjust_sim_time', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ days_delta: days })

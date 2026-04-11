@@ -14,7 +14,7 @@ from flask import Flask, jsonify
 from app.blueprints.auth import auth_bp
 from app.blueprints.review import review_bp
 from app.blueprints.stats import stats_bp
-from app.blueprints.themes import themes_bp
+from app.blueprints.settings import settings_bp
 
 app = Flask(__name__,
             template_folder="app/templates",
@@ -25,7 +25,7 @@ app.secret_key = 'dev-secret-key-change-in-production'  # Required for sessions/
 app.register_blueprint(auth_bp)
 app.register_blueprint(review_bp, url_prefix='/review')
 app.register_blueprint(stats_bp, url_prefix='/stats')
-app.register_blueprint(themes_bp)
+app.register_blueprint(settings_bp, url_prefix='/settings')
 
 
 @app.route('/api/health')

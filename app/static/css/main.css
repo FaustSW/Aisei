@@ -251,3 +251,166 @@ main {
     border-radius: 8px;
     background: var(--bg-card);
 }
+
+.modal-content.glass-panel {
+    background: rgba(255, 255, 255, 0.9) !important;
+    padding: 30px;
+    border-radius: 15px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    animation: modalFadeIn 0.3s ease-out;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+/* Each option row */
+.settings-option-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 14px 0;
+    border-bottom: 1px solid rgba(0,0,0,0.07);
+}
+
+.settings-option-group:last-of-type {
+    border-bottom: none;
+}
+
+.settings-option-label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Theme dropdown inside modal */
+.settings-option-group .theme-selector {
+    position: static;
+    box-shadow: none;
+    padding: 0;
+    background: transparent;
+    border: none;
+}
+
+.settings-option-group select {
+    padding: 8px 10px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    font-size: 0.95rem;
+    background: white;
+    color: #333;
+    cursor: pointer;
+}
+
+/* Sim time controls inside modal */
+.sim-time-top-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
+}
+
+.sim-time-display {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #333;
+    padding: 6px 10px;
+    background: rgba(0,0,0,0.05);
+    border-radius: 6px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.sim-time-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.settings-divider {
+    margin: 0;
+    border: 0;
+    border-top: 1px solid rgba(0,0,0,0.1);
+}
+
+.modal-content h2 {
+    text-align: center;
+    color: #222;
+    margin: 0 0 10px 0;
+    font-size: 1.2rem;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.modal-actions button {
+    flex: 1;
+}
+
+.guest-notice {
+    padding: 15px;
+    background: rgba(0,0,0,0.04);
+    border-radius: 8px;
+    text-align: center;
+    font-size: 14px;
+    color: #777;
+}
+
+.settings-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+}
+
+.settings {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1001;
+    display: flex;
+    align-items: center;
+    background: var(--bg-card);
+    padding: 6px 12px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--border-color);
+}
+
+#settings-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-main);
+    font-weight: bold;
+    font-size: 13px;
+    cursor: pointer;
+    padding: 4px 8px;
+    transition: color 0.2s;
+}
+
+#settings-btn:hover {
+    color: var(--primary);
+}
+
+@keyframes modalFadeIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}

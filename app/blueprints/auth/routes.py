@@ -30,6 +30,7 @@ auth_bp = Blueprint("auth", __name__, template_folder="templates")
 
 @auth_bp.route("/")
 def index():
+    session.clear()  # Clear any existing session on landing at the login page
     profiles = get_profiles_list()
     return render_template("login.html", profiles_json=json.dumps(profiles))
 
