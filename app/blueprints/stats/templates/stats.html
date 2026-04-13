@@ -114,6 +114,159 @@ Two-section layout:
         {% endif %}
     </section>
 
+    {# ══════════════════════════════════════════════════════════════════════
+       STUB: Future Due Forecast (bar chart)
+       ══════════════════════════════════════════════════════════════════════
+
+       Data source: future_due (dict from get_future_due_forecast)
+
+       Available fields:
+         future_due.backlog        — int, overdue cards from before today
+         future_due.daily_forecast — list of dicts, each with:
+                                       "date" (ISO string, e.g. "2026-04-06")
+                                       "count" (int, cards due that day)
+         future_due.total          — int, backlog + all forecasted
+         future_due.avg_per_day    — float, average daily due count
+         future_due.due_tomorrow   — int, cards due tomorrow
+
+       Frontend needs to:
+         - Render a bar chart with one bar per day from daily_forecast
+         - Optionally show backlog as a separate bar or label on the left
+         - Consider adding time-range toggles (1 month / 3 months / 1 year)
+           that re-request with different day counts via JS, or just use
+           the default 30-day window
+
+       Reference: "Future Due" panel from the Anki stats screenshot
+    #}
+    <section class="stats-section">
+        <h2 class="section-heading">Future Due</h2>
+        <p class="stats-placeholder">
+            Forecast chart not yet implemented.
+            Backend data is wired — see template comments for field reference.
+        </p>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h2>Backlog</h2>
+                <p class="stat-number">{{ future_due.backlog }}</p>
+            </div>
+            <div class="stat-card">
+                <h2>Due Tomorrow</h2>
+                <p class="stat-number">{{ future_due.due_tomorrow }}</p>
+            </div>
+            <div class="stat-card">
+                <h2>Avg Due / Day</h2>
+                <p class="stat-number">{{ future_due.avg_per_day }}</p>
+            </div>
+        </div>
+    </section>
+
+    {# ══════════════════════════════════════════════════════════════════════
+       STUB: Card Types (pie chart)
+       ══════════════════════════════════════════════════════════════════════
+
+       Data source: card_types (dict from get_card_type_distribution)
+
+       Available fields:
+         card_types.new      — int, never reviewed
+         card_types.learning — int, in learning or relearning steps
+         card_types.young    — int, reviewed with interval < 21 days
+         card_types.mature   — int, reviewed with interval >= 21 days
+         card_types.total    — int, sum of all buckets
+
+       Frontend needs to:
+         - Render a pie chart or donut chart with four slices
+         - Color coding suggestion (matching Anki conventions):
+             new      — blue
+             learning — orange/red
+             young    — green (lighter)
+             mature   — green (darker)
+         - Show counts and percentages in a legend or on hover
+
+       Reference: pie chart panel from the Anki stats screenshot
+    #}
+    <section class="stats-section">
+        <h2 class="section-heading">Card Types</h2>
+        <p class="stats-placeholder">
+            Card types pie chart not yet implemented.
+            Backend data is wired — see template comments for field reference.
+        </p>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h2>New</h2>
+                <p class="stat-number">{{ card_types.new }}</p>
+            </div>
+            <div class="stat-card">
+                <h2>Learning</h2>
+                <p class="stat-number">{{ card_types.learning }}</p>
+            </div>
+            <div class="stat-card">
+                <h2>Young</h2>
+                <p class="stat-number">{{ card_types.young }}</p>
+            </div>
+            <div class="stat-card">
+                <h2>Mature</h2>
+                <p class="stat-number">{{ card_types.mature }}</p>
+            </div>
+        </div>
+    </section>
+
+    {# ══════════════════════════════════════════════════════════════════════
+       STUB: Retention Table
+       ══════════════════════════════════════════════════════════════════════
+
+       Data source: retention (dict from get_retention_stats)
+
+       Available fields — one entry per time period, each containing:
+         retention.today.young   — int or None, pass rate % for young cards
+         retention.today.mature  — int or None, pass rate % for mature cards
+         retention.today.total   — int or None, combined pass rate %
+         retention.today.count   — int, number of eligible reviews
+         (same structure for .yesterday, .last_week, .last_month)
+
+       None means no reviews matched that bucket in that period.
+       Frontend should display "N/A" when a value is None.
+
+       Uses current card interval to classify young vs mature, which is
+       an approximation — see stats_service.py docstring for details.
+
+       Frontend needs to:
+         - Style the table to match the existing stats page theme
+         - Format values as percentages with "%" suffix
+         - Show "N/A" for None values
+
+       Reference: "Retention" table from the Anki stats screenshot
+    #}
+    <section class="stats-section">
+        <h2 class="section-heading">Retention</h2>
+        <table class="retention-table">
+            <thead>
+                <tr>
+                    <th>Period</th>
+                    <th>Young</th>
+                    <th>Mature</th>
+                    <th>Total</th>
+                    <th>Count</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for period_name, period_label in [
+                    ("today", "Today"),
+                    ("yesterday", "Yesterday"),
+                    ("last_week", "Last Week"),
+                    ("last_month", "Last Month"),
+                ] %}
+                <tr>
+                    <td>{{ period_label }}</td>
+                    <td>{{ retention[period_name].young ~ "%" if retention[period_name].young is not none else "N/A" }}</td>
+                    <td>{{ retention[period_name].mature ~ "%" if retention[period_name].mature is not none else "N/A" }}</td>
+                    <td>{{ retention[period_name].total ~ "%" if retention[period_name].total is not none else "N/A" }}</td>
+                    <td>{{ retention[period_name].count }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+
     {# ── Long-term progression ── #}
     <section class="stats-section">
         <h2 class="section-heading">Overall Progress</h2>
