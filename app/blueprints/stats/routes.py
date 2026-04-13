@@ -10,7 +10,14 @@ Routes:
 
 from flask import Blueprint, render_template, redirect, url_for, session, request, jsonify
 
-from app.services.stats_service import get_session_stats, get_long_term_stats, get_period_stats
+from app.services.stats_service import (
+    get_session_stats,
+    get_long_term_stats,
+    get_period_stats,
+    get_card_type_distribution,
+    get_future_due_forecast,
+    get_retention_stats,
+)
 
 stats_bp = Blueprint('stats', __name__, template_folder='templates')
 
@@ -24,11 +31,17 @@ def stats():
 
     session_stats = get_session_stats(user_id)
     long_term = get_long_term_stats(user_id)
+    card_types = get_card_type_distribution(user_id)
+    future_due = get_future_due_forecast(user_id, days=30)
+    retention = get_retention_stats(user_id)
 
     return render_template(
         "stats.html",
         stats=session_stats,
         long_term=long_term,
+        card_types=card_types,
+        future_due=future_due,
+        retention=retention,
     )
 
 
