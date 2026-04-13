@@ -12,6 +12,15 @@ Current responsibilities:
 - Count cards due right now
 - Compute long-term progression metrics (all-time reviews, mastered cards,
   daily streaks, weekly review history, accuracy rate)
+- Return per-week rating distribution for configurable time windows
+- Forecast future due cards per day for the next N days
+- Break down current card pool by maturity (new / learning / young / mature)
+- Compute retention rates by maturity and time period
+
+Known limitation:
+    ReviewLog does not snapshot the card's interval or scheduler_state at
+    the time of each review. The retention table uses the card's current
+    interval to classify young vs mature, which is an approximation.
 """
 
 from __future__ import annotations
@@ -33,6 +42,11 @@ from app.services.queue_service import (
     get_today_window,
 )
 from app.services.settings_service import get_daily_new_limit
+
+
+# Anki uses 21 days as the threshold between young and mature cards.
+# Cards with interval >= 21 are considered mature (well-learned).
+YOUNG_MATURE_THRESHOLD_DAYS = 21
 
 
 def get_session_stats(user_id: int) -> dict:
@@ -363,5 +377,227 @@ def get_period_stats(user_id: int, period: str) -> dict:
             "avg_per_day": avg_per_day,
             "sessions": sessions,
         }
+    finally:
+        db_session.close()
+
+
+def _classify_maturity(review_state: ReviewState) -> str:
+    """
+    Classify a ReviewState into a maturity bucket based on its current state.
+
+    Buckets:
+        new      — never reviewed (repetitions == 0)
+        learning — in learning or relearning steps (scheduler_state 1 or 3)
+        young    — graduated to review, interval < 21 days
+        mature   — graduated to review, interval >= 21 days
+    """
+    if review_state.repetitions == 0:
+        return "new"
+
+    if review_state.scheduler_state in (1, 3):
+        return "learning"
+
+    if review_state.interval >= YOUNG_MATURE_THRESHOLD_DAYS:
+        return "mature"
+
+    return "young"
+
+
+def get_card_type_distribution(user_id: int) -> dict:
+    """
+    Count cards in each maturity bucket for the card types pie chart.
+
+    Returns:
+        A dict containing:
+            - new      — cards never reviewed
+            - learning — cards in learning or relearning steps
+            - young    — reviewed cards with interval < 21 days
+            - mature   — reviewed cards with interval >= 21 days
+            - total    — sum of all buckets
+    """
+    db_session = get_session()
+    try:
+        all_states = db_session.exec(
+            select(ReviewState).where(ReviewState.user_id == user_id)
+        ).all()
+
+        counts = {"new": 0, "learning": 0, "young": 0, "mature": 0}
+
+        for rs in all_states:
+            bucket = _classify_maturity(rs)
+            counts[bucket] += 1
+
+        counts["total"] = sum(counts.values())
+        return counts
+    finally:
+        db_session.close()
+
+
+def get_future_due_forecast(user_id: int, days: int = 30) -> dict:
+    """
+    For each of the next N days, count how many cards will be due.
+
+    Also counts the backlog — cards already overdue before today.
+
+    Returns:
+        A dict containing:
+            - backlog        — number of cards due before today
+            - daily_forecast — list of dicts, one per day, each with
+                               "date" (ISO string) and "count" (int)
+            - total          — backlog + sum of all forecasted counts
+            - avg_per_day    — average daily due count over the forecast window
+            - due_tomorrow   — count for tomorrow specifically
+    """
+    db_session = get_session()
+    try:
+        now = get_simulated_now()
+        today_start, _ = get_today_window(now)
+        today_date = today_start.date()
+
+        all_states = db_session.exec(
+            select(ReviewState).where(ReviewState.user_id == user_id)
+        ).all()
+
+        backlog = 0
+        day_counts: dict[str, int] = {}
+
+        for rs in all_states:
+            due = as_utc(rs.due_date)
+            if due is None:
+                continue
+
+            due_date = due.date()
+
+            if due_date < today_date:
+                backlog += 1
+            elif due_date <= today_date + timedelta(days=days):
+                key = due_date.isoformat()
+                day_counts[key] = day_counts.get(key, 0) + 1
+
+        daily_forecast = []
+        for offset in range(days + 1):
+            forecast_date = today_date + timedelta(days=offset)
+            key = forecast_date.isoformat()
+            daily_forecast.append({
+                "date": key,
+                "count": day_counts.get(key, 0),
+            })
+
+        forecast_total = sum(d["count"] for d in daily_forecast)
+        total = backlog + forecast_total
+        avg_per_day = round(forecast_total / max(days, 1), 1)
+
+        tomorrow_date = (today_date + timedelta(days=1)).isoformat()
+        due_tomorrow = day_counts.get(tomorrow_date, 0)
+
+        return {
+            "backlog": backlog,
+            "daily_forecast": daily_forecast,
+            "total": total,
+            "avg_per_day": avg_per_day,
+            "due_tomorrow": due_tomorrow,
+        }
+    finally:
+        db_session.close()
+
+
+def get_retention_stats(user_id: int) -> dict:
+    """
+    Pass rate of reviewed cards, broken down by maturity and time period.
+
+    A "pass" is a rating of Good (3) or Easy (4). Only reviews of cards
+    that currently have interval >= 1 day are included, matching Anki's
+    retention table behavior.
+
+    Uses the card's current interval to classify as young (< 21 days) or
+    mature (>= 21 days). This is an approximation — the card's interval
+    at the time of the review may have been different.
+
+    Returns a dict with a key for each time period (today, yesterday,
+    last_week, last_month). Each period contains:
+        - young  — pass rate percentage for young cards, or None if no data
+        - mature — pass rate percentage for mature cards, or None if no data
+        - total  — pass rate percentage across both, or None if no data
+        - count  — total number of reviews in this period for eligible cards
+    """
+    db_session = get_session()
+    try:
+        now = get_simulated_now()
+        today_start, tomorrow_start = get_today_window(now)
+
+        all_states = db_session.exec(
+            select(ReviewState).where(ReviewState.user_id == user_id)
+        ).all()
+
+        # Only include cards that have graduated to review (interval >= 1)
+        eligible_state_ids = set()
+        state_maturity: dict[int, str] = {}
+        for rs in all_states:
+            if rs.interval is not None and rs.interval >= 1 and rs.id is not None:
+                eligible_state_ids.add(rs.id)
+                if rs.interval >= YOUNG_MATURE_THRESHOLD_DAYS:
+                    state_maturity[rs.id] = "mature"
+                else:
+                    state_maturity[rs.id] = "young"
+
+        all_logs = db_session.exec(
+            select(ReviewLog)
+            .where(ReviewLog.user_id == user_id)
+            .order_by(col(ReviewLog.reviewed_at).asc())
+        ).all()
+
+        eligible_logs = [
+            log for log in all_logs
+            if log.review_state_id in eligible_state_ids
+        ]
+
+        periods = {
+            "today": (today_start, tomorrow_start),
+            "yesterday": (today_start - timedelta(days=1), today_start),
+            "last_week": (today_start - timedelta(days=7), tomorrow_start),
+            "last_month": (today_start - timedelta(days=30), tomorrow_start),
+        }
+
+        results = {}
+
+        for period_name, (start, end) in periods.items():
+            young_pass = 0
+            young_total = 0
+            mature_pass = 0
+            mature_total = 0
+
+            for log in eligible_logs:
+                reviewed_at = as_utc(log.reviewed_at)
+                if reviewed_at is None:
+                    continue
+                if not (start <= reviewed_at < end):
+                    continue
+
+                maturity = state_maturity.get(log.review_state_id)
+                if maturity is None:
+                    continue
+
+                is_pass = log.rating in (3, 4)
+
+                if maturity == "young":
+                    young_total += 1
+                    if is_pass:
+                        young_pass += 1
+                else:
+                    mature_total += 1
+                    if is_pass:
+                        mature_pass += 1
+
+            combined_total = young_total + mature_total
+            combined_pass = young_pass + mature_pass
+
+            results[period_name] = {
+                "young": round(young_pass / young_total * 100) if young_total > 0 else None,
+                "mature": round(mature_pass / mature_total * 100) if mature_total > 0 else None,
+                "total": round(combined_pass / combined_total * 100) if combined_total > 0 else None,
+                "count": combined_total,
+            }
+
+        return results
     finally:
         db_session.close()
