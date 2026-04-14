@@ -148,7 +148,11 @@
 
 <div class="rating-distribution-section">
     <div class="rating-distribution-container">
-        <div class="rating-distribution-bar">
+        <div class="rating-distribution-bar js-distribution-tooltip-target"
+             data-again="{{ stats.counts.again if stats else 0 }}"
+             data-hard="{{ stats.counts.hard if stats else 0 }}"
+             data-good="{{ stats.counts.good if stats else 0 }}"
+             data-easy="{{ stats.counts.easy if stats else 0 }}">
             <div class="rating-distribution-segment segment-again" id="segment-again"></div>
             <div class="rating-distribution-segment segment-hard" id="segment-hard"></div>
             <div class="rating-distribution-segment segment-good" id="segment-good"></div>

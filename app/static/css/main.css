@@ -381,6 +381,10 @@ main {
     z-index: 10000;
 }
 
+.is-hidden {
+    display: none !important;
+}
+
 .settings {
     position: fixed;
     top: 20px;

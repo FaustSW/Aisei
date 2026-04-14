@@ -89,7 +89,11 @@ Two-section layout:
         <div class="daily-rating-section">
             <h3 class="chart-heading">Rating Distribution</h3>
             <div class="rating-distribution-container">
-                <div class="rating-distribution-bar">
+                <div class="rating-distribution-bar js-distribution-tooltip-target"
+                     data-again="{{ stats.counts.again }}"
+                     data-hard="{{ stats.counts.hard }}"
+                     data-good="{{ stats.counts.good }}"
+                     data-easy="{{ stats.counts.easy }}">
                     <div class="rating-distribution-segment segment-again"
                          style="width: {{ ((stats.counts.again / total_ratings) * 100) | round | int }}%"
                          title="Again: {{ stats.counts.again }}"></div>

@@ -15,6 +15,69 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!chartEl) return;
 
     let currentPeriod = '1m';
+    const distributionTooltip = createDistributionTooltip();
+
+    function parseCountsFromDataset(dataset) {
+        return {
+            again: Number(dataset.again || 0),
+            hard: Number(dataset.hard || 0),
+            good: Number(dataset.good || 0),
+            easy: Number(dataset.easy || 0),
+        };
+    }
+
+    function tooltipMarkup(counts) {
+        return `
+            <div class="distribution-tooltip-title">Rating Distribution</div>
+            <div class="distribution-tooltip-row"><span class="distribution-tooltip-dot dot-again"></span>Again: <strong>${counts.again}</strong></div>
+            <div class="distribution-tooltip-row"><span class="distribution-tooltip-dot dot-hard"></span>Hard: <strong>${counts.hard}</strong></div>
+            <div class="distribution-tooltip-row"><span class="distribution-tooltip-dot dot-good"></span>Good: <strong>${counts.good}</strong></div>
+            <div class="distribution-tooltip-row"><span class="distribution-tooltip-dot dot-easy"></span>Easy: <strong>${counts.easy}</strong></div>
+        `;
+    }
+
+    function createDistributionTooltip() {
+        const el = document.createElement('div');
+        el.className = 'distribution-hover-tooltip';
+        document.body.appendChild(el);
+        return el;
+    }
+
+    function positionTooltip(mouseX, mouseY) {
+        const pad = 12;
+        const rect = distributionTooltip.getBoundingClientRect();
+        let left = mouseX + pad;
+        let top = mouseY + pad;
+
+        if (left + rect.width > window.innerWidth - 8) {
+            left = mouseX - rect.width - pad;
+        }
+        if (top + rect.height > window.innerHeight - 8) {
+            top = mouseY - rect.height - pad;
+        }
+
+        distributionTooltip.style.left = `${Math.max(8, left)}px`;
+        distributionTooltip.style.top = `${Math.max(8, top)}px`;
+    }
+
+    function bindDistributionTooltip(target) {
+        if (!target || target.dataset.tooltipBound === '1') return;
+        target.dataset.tooltipBound = '1';
+
+        const show = (e) => {
+            distributionTooltip.innerHTML = tooltipMarkup(parseCountsFromDataset(target.dataset));
+            distributionTooltip.classList.add('is-visible');
+            positionTooltip(e.clientX, e.clientY);
+        };
+        const move = (e) => positionTooltip(e.clientX, e.clientY);
+        const hide = () => distributionTooltip.classList.remove('is-visible');
+
+        target.addEventListener('mouseenter', show);
+        target.addEventListener('mousemove', move);
+        target.addEventListener('mouseleave', hide);
+    }
+
+    document.querySelectorAll('.js-distribution-tooltip-target').forEach(bindDistributionTooltip);
 
     //  Load data ──────────────────────────────────────────────────────────
 
@@ -77,10 +140,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 ? `${labelParts[0]}<br>${labelParts[1]}`
                 : week.label;
 
-            const tooltip = `Again: ${week.again}  Hard: ${week.hard}  Good: ${week.good}  Easy: ${week.easy}`;
-
             return `<div class="period-bar-group">
-                        <div class="period-bar-stack" style="height:${heightPct.toFixed(1)}%" title="${tooltip}">
+                        <div class="period-bar-stack js-distribution-tooltip-target"
+                             style="height:${heightPct.toFixed(1)}%"
+                             data-again="${week.again}"
+                             data-hard="${week.hard}"
+                             data-good="${week.good}"
+                             data-easy="${week.easy}">
                             ${segHtml}
                         </div>
                         <span class="period-bar-total">${total > 0 ? total : ''}</span>
@@ -89,6 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         chartEl.innerHTML = bars.join('');
+        chartEl.querySelectorAll('.js-distribution-tooltip-target').forEach(bindDistributionTooltip);
     }
 
     // ── Button handlers ────────────────────────────────────────────────────

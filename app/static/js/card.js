@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalConfirm = document.getElementById('modal-confirm');
     const modalCancel = document.getElementById('modal-cancel');
     const modalMessage = document.getElementById('modal-message');
+    const ratingDistributionBar = document.querySelector('.rating-distribution-bar.js-distribution-tooltip-target');
 
     let reviewStateId = typeof CURRENT_REVIEW_STATE_ID !== 'undefined' ? CURRENT_REVIEW_STATE_ID : null;
     let reviewCounts = {
@@ -30,10 +31,71 @@ document.addEventListener('DOMContentLoaded', () => {
         easy:  (initial.counts && initial.counts.easy)  || 0,
     };
     let isFlipping = false;
+    const distributionTooltip = createDistributionTooltip();
+
+    function createDistributionTooltip() {
+        const el = document.createElement('div');
+        el.className = 'distribution-hover-tooltip';
+        document.body.appendChild(el);
+        return el;
+    }
+
+    function tooltipMarkup(counts) {
+        return `
+            <div class="distribution-tooltip-title">Rating Distribution</div>
+            <div class="distribution-tooltip-row"><span class="distribution-tooltip-dot dot-again"></span>Again: <strong>${counts.again}</strong></div>
+            <div class="distribution-tooltip-row"><span class="distribution-tooltip-dot dot-hard"></span>Hard: <strong>${counts.hard}</strong></div>
+            <div class="distribution-tooltip-row"><span class="distribution-tooltip-dot dot-good"></span>Good: <strong>${counts.good}</strong></div>
+            <div class="distribution-tooltip-row"><span class="distribution-tooltip-dot dot-easy"></span>Easy: <strong>${counts.easy}</strong></div>
+        `;
+    }
+
+    function positionTooltip(mouseX, mouseY) {
+        const pad = 12;
+        const rect = distributionTooltip.getBoundingClientRect();
+        let left = mouseX + pad;
+        let top = mouseY + pad;
+
+        if (left + rect.width > window.innerWidth - 8) {
+            left = mouseX - rect.width - pad;
+        }
+        if (top + rect.height > window.innerHeight - 8) {
+            top = mouseY - rect.height - pad;
+        }
+
+        distributionTooltip.style.left = `${Math.max(8, left)}px`;
+        distributionTooltip.style.top = `${Math.max(8, top)}px`;
+    }
+
+    function bindDistributionTooltip(target) {
+        if (!target || target.dataset.tooltipBound === '1') return;
+        target.dataset.tooltipBound = '1';
+
+        const show = (e) => {
+            const counts = {
+                again: Number(target.dataset.again || 0),
+                hard: Number(target.dataset.hard || 0),
+                good: Number(target.dataset.good || 0),
+                easy: Number(target.dataset.easy || 0),
+            };
+            distributionTooltip.innerHTML = tooltipMarkup(counts);
+            distributionTooltip.classList.add('is-visible');
+            positionTooltip(e.clientX, e.clientY);
+        };
+
+        const move = (e) => positionTooltip(e.clientX, e.clientY);
+        const hide = () => distributionTooltip.classList.remove('is-visible');
+
+        target.addEventListener('mouseenter', show);
+        target.addEventListener('mousemove', move);
+        target.addEventListener('mouseleave', hide);
+    }
 
     if (dailyNewLimitInput) {
         dailyNewLimitInput.value = initialDailyNewLimit;
     }
+
+    bindDistributionTooltip(ratingDistributionBar);
 
     updateRatingDistribution();
     updatePreviewLabels(initialPreviews);
@@ -396,6 +458,13 @@ if (backAudioBtn) {
         };
 
         const safeTotal = Math.max(again + hard + good + easy, 1);
+
+        if (ratingDistributionBar) {
+            ratingDistributionBar.dataset.again = String(again);
+            ratingDistributionBar.dataset.hard = String(hard);
+            ratingDistributionBar.dataset.good = String(good);
+            ratingDistributionBar.dataset.easy = String(easy);
+        }
 
         if (segments.again) segments.again.style.width = `${(again / safeTotal) * 100}%`;
         if (segments.hard) segments.hard.style.width = `${(hard / safeTotal) * 100}%`;

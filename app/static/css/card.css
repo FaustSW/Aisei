@@ -454,6 +454,56 @@ button.audio-btn:hover {
     color: var(--text-main, #333);
 }
 
+.distribution-hover-tooltip {
+    position: fixed;
+    z-index: 2200;
+    min-width: 150px;
+    background: var(--bg-card, #fff);
+    color: var(--text-main, #222);
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: 8px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+    padding: 8px 10px;
+    font-size: 0.78rem;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(2px);
+    transition: opacity 0.12s ease, transform 0.12s ease;
+}
+
+.distribution-hover-tooltip.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.distribution-tooltip-title {
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+
+.distribution-tooltip-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    line-height: 1.5;
+}
+
+.distribution-tooltip-row strong {
+    margin-left: auto;
+}
+
+.distribution-tooltip-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex: 0 0 8px;
+}
+
+.distribution-tooltip-dot.dot-again { background: #e74c3c; }
+.distribution-tooltip-dot.dot-hard  { background: #f39c12; }
+.distribution-tooltip-dot.dot-good  { background: #2ecc71; }
+.distribution-tooltip-dot.dot-easy  { background: #3498db; }
+
 .modal-overlay {
     position: fixed;
     top: 0;
