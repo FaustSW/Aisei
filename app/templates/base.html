@@ -73,6 +73,22 @@
             </div>
 
             <div class="settings-option-group">
+                <label class="settings-option-label" for="daily-new-limit-input">Enter API Keys</label>
+                <div class="form-group">
+                    <label for="newOpenAIKey">OpenAI API Key (Optional):</label>
+                    <input type="password" id="newOpenAIKey" placeholder="Enter key...">
+                </div>
+                <div class="form-group">
+                    <label for="ElevenLabsKey">ElevenLabs API Key (Optional):</label>
+                    <input type="password" id="ElevenLabsKey" placeholder="Enter key...">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="glass-button btn-create" onclick="saveAPIKeys()">Save & Continue</button>
+                </div>
+            </div>
+
+
+            <div class="settings-option-group">
                 <label class="settings-option-label" for="voice-dropdown">TTS Voice</label>
                 <select id="voice-dropdown" onchange="changeVoice()">
                     <option value="">Loading...</option>

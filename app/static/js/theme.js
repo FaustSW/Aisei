@@ -3,16 +3,16 @@
 // ==============================================================================================================
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Initializing Seisei Settings...');
-    
-    // 1. Always load themes (Public)
     loadThemes();
     loadSavedTheme();
 
-    // 2. Only load voices/settings if the elements exist (Gated)
     if (document.getElementById('voice-dropdown')) {
         loadVoices();
         loadSavedVoice();
+    }
+
+    if (document.getElementById('newOpenAIKey')) {
+        loadSavedAPIKeys(); 
     }
 
     setupModalLogic();
@@ -163,4 +163,65 @@ function loadSavedVoice() {
 
     const savedVoice = localStorage.getItem('selectedVoice');
     if (savedVoice) dropdown.value = savedVoice;
+}
+
+// ==============================================================================================================
+// API LOGIC (Gated)
+// ==============================================================================================================
+function saveAPIKeys() {
+    const openaiKey = document.getElementById("newOpenAIKey").value.trim();
+    const elevenlabsKey = document.getElementById("ElevenLabsKey").value.trim();
+
+    const saveBtn = document.querySelector("#settings-modal .btn-create");
+    saveBtn.textContent = "Saving...";
+    saveBtn.disabled = true;
+
+    const body = {};
+    if (openaiKey) body.openai_key = openaiKey;       
+    if (elevenlabsKey) body.elevenlabs_key = elevenlabsKey;
+
+    if (Object.keys(body).length === 0) {
+        alert("No changes to save.");
+        return;
+    }
+
+    fetch("/save_api_keys", { 
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            openai_key: openaiKey,    // Could be an empty string ""
+            elevenlabs_key: elevenlabsKey // Could be an empty string ""
+        }),
+    })
+    .then((res) => res.json())
+    .then((data) => {
+        if (data.ok) {
+            alert("API keys saved successfully!");
+        } else {
+            alert("Error saving keys: " + (data.error || "Unknown error"));
+            saveBtn.textContent = "Save & Continue";
+            saveBtn.disabled = false;
+        }
+    })
+    .catch((err) => {
+        console.error("Error:", err);
+        alert("Failed to reach server.");
+        saveBtn.disabled = false;
+    });
+    saveBtn.textContent = "Save & Continue";
+    saveBtn.disabled = false;
+}
+
+function loadSavedAPIKeys() {
+    fetch('/api-keys-status')
+        .then(res => res.json())
+        .then(data => {
+            const MASK = '••••••••••••••••';
+            const openaiInput = document.getElementById('newOpenAIKey');
+            const elevenlabsInput = document.getElementById('ElevenLabsKey');
+
+            if (data.has_openai_key) openaiInput.placeholder = MASK;
+            if (data.has_elevenlabs_key) elevenlabsInput.placeholder = MASK;
+        })
+        .catch(err => console.error('Error loading API key status:', err));
 }

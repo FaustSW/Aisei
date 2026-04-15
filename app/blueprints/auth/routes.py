@@ -122,6 +122,20 @@ def save_api_keys():
         return jsonify({"ok": True})
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)})
+    
+@auth_bp.route("/api-keys-status")
+def api_keys_status():
+    username = session.get("user")
+    if not username:
+        return jsonify({"error": "Not logged in"}), 401
+
+    openai_key = keyring.get_password(APP_ID, f"{username}_openai")
+    elevenlabs_key = keyring.get_password(APP_ID, f"{username}_elevenlabs")
+
+    return jsonify({
+        "has_openai_key": bool(openai_key),
+        "has_elevenlabs_key": bool(elevenlabs_key)
+    })
 
 
 @auth_bp.route("/go_to_review")
