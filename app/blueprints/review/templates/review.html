@@ -22,6 +22,17 @@
     <a href="{{ url_for('stats.stats') }}" class="stat-btn btn-stats">Stats</a>
 </div>
 
+<div
+    id="regen-status"
+    class="regen-status-badge {% if not card or (not card.needs_regeneration and not card.regenerated_this_fetch) %}is-hidden{% endif %}"
+>
+    {% if card and card.regenerated_this_fetch %}
+        Regenerated this fetch. Current card version: {{ card.generation_number }}
+    {% elif card and card.needs_regeneration %}
+        Pending regeneration on next fetch
+    {% endif %}
+</div>
+
 <div class="daily-totals daily-totals-container">
     <div class="total-item-new">
         New: <span id="total-new">{{ stats.new_cards if stats else 0 }}</span>
@@ -234,6 +245,12 @@
         learning_cards: {{ stats.learning_cards if stats else 0 }},
         review_cards: {{ stats.review_cards if stats else 0 }},
         daily_new_limit: {{ daily_new_limit }}
+    };
+
+    const INITIAL_REGEN_STATUS = {
+        needs_regeneration: {{ (card.needs_regeneration if card else false) | tojson }},
+        regenerated_this_fetch: {{ (card.regenerated_this_fetch if card else false) | tojson }},
+        generation_number: {{ (card.generation_number if card else 'null') }}
     };
 </script>
 <script src="{{ url_for('static', filename='js/card.js') }}"></script>

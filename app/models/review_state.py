@@ -14,9 +14,10 @@ Fields (SM-2, owned by scheduler_adapter):
     due_date        - when this card is next due for review (UTC)
 
 Fields (app-owned, updated by review_service):
-    repetitions    - total number of reviews completed
-    lapses         - times a Review-state card was rated Again
-    success_streak - consecutive Good/Easy ratings (drives regeneration)
+    repetitions         - total number of reviews completed
+    lapses              - times a Review-state card was rated Again
+    success_streak      - consecutive Good/Easy ratings (drives regeneration)
+    needs_regeneration  - True when the next fetch should create a fresh GeneratedCard
 
 Fields (linking):
     current_generated_card_id - points to the active GeneratedCard (nullable)
@@ -40,27 +41,31 @@ class ReviewState(SQLModel, table=True):
     Scheduling state for one user studying one vocab item.
 
     SM-2 fields are managed exclusively by scheduler_adapter.
-    App-owned counters (repetitions, lapses, success_streak) are
-    managed by review_service. Both are persisted here.
+    App-owned counters (repetitions, lapses, success_streak, needs_regeneration)
+    are managed by review_service. Both are persisted here.
     """
 
     __tablename__ = "review_state"
 
-    id:      Optional[int] = Field(default=None, primary_key=True)
-    user_id: int           = Field(foreign_key="user.id",  index=True)
-    vocab_id: int          = Field(foreign_key="vocab.id", index=True)
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", index=True)
+    vocab_id: int = Field(foreign_key="vocab.id", index=True)
 
     # SM-2 scheduling fields (owned by scheduler_adapter)
-    scheduler_state: int            = Field(default=1)
-    learning_step:   Optional[int]  = Field(default=0)
-    ease_factor:     float          = Field(default=2.5)
-    interval:        int            = Field(default=0)
-    due_date:        Optional[datetime] = Field(default=None, index=True)
+    scheduler_state: int = Field(default=1)
+    learning_step: Optional[int] = Field(default=0)
+    ease_factor: float = Field(default=2.5)
+    interval: int = Field(default=0)
+    due_date: Optional[datetime] = Field(default=None, index=True)
 
     # App-owned counters (owned by review_service)
-    repetitions:     int = Field(default=0)
-    lapses:          int = Field(default=0)
-    success_streak:  int = Field(default=0)
+    repetitions: int = Field(default=0)
+    lapses: int = Field(default=0)
+    success_streak: int = Field(default=0)
+    needs_regeneration: bool = Field(default=False)
 
     # Points to the currently active GeneratedCard (nullable until first generation)
-    current_generated_card_id: Optional[int] = Field(default=None, foreign_key="generated_card.id")
+    current_generated_card_id: Optional[int] = Field(
+        default=None,
+        foreign_key="generated_card.id",
+    )

@@ -8,17 +8,17 @@ Current responsibilities:
 - Generate initial sentence/translation content for a vocab item.
 - Create and persist a GeneratedCard for a ReviewState when needed.
 - Provide ElevenLabs audio generation for on-card playback.
+- Decide whether a card should be marked for regeneration.
 
 Later responsibilities:
-- Regeneration rules based on success_streak / interval thresholds
 - Validation refinement / retry logic
-- Optional TTS generation during card creation
 """
 
 from __future__ import annotations
 
 import hashlib
 import json
+import re
 from typing import Optional
 
 from sqlmodel import select
@@ -30,6 +30,10 @@ from app.models.review_state import ReviewState
 from app.models.vocab import Vocab
 
 DEFAULT_GENERATION_MODEL = "gpt-5.4-nano"
+
+# Regen thresholds for testing. To be changed later.
+REGEN_SUCCESS_STREAK_THRESHOLD = 1
+REGEN_INTERVAL_THRESHOLD_DAYS = 1
 
 
 def _extract_json_object(raw_text: str) -> dict:
@@ -61,17 +65,57 @@ def _extract_json_object(raw_text: str) -> dict:
     return parsed
 
 
+def _normalize_for_duplicate_check(text: str) -> str:
+    """
+    Normalize text for exact-duplicate comparison.
+
+    Lowercases, strips punctuation, and collapses whitespace.
+    """
+    normalized = text.lower().strip()
+    normalized = re.sub(r"[^\w\s]", "", normalized, flags=re.UNICODE)
+    normalized = re.sub(r"\s+", " ", normalized).strip()
+    return normalized
+
+
+def _build_prior_versions_block(prior_versions: list[dict]) -> str:
+    """
+    Format all previous GeneratedCard versions into a readable prompt block.
+    """
+    if not prior_versions:
+        return "None."
+
+    lines = []
+    for i, version in enumerate(prior_versions, start=1):
+        sentence = str(version.get("sentence") or "").strip()
+        translation = str(version.get("translation") or "").strip()
+        generation_number = version.get("generation_number")
+
+        lines.append(
+            f'{i}. Generation {generation_number}: '
+            f'Sentence: "{sentence}" | Translation: "{translation}"'
+        )
+
+    return "\n".join(lines)
+
+
 def generate_card_content_for_vocab(
     username: str,
     term: str,
     english_gloss: str,
     model: str = DEFAULT_GENERATION_MODEL,
+    prior_versions: list[dict] | None = None,
 ) -> dict:
     """
     Generate one natural Spanish sentence and one English translation
     for the provided vocab term.
+
+    If prior_versions are provided, the model is instructed not to reuse
+    or lightly rephrase previously used content.
     """
     client = GPTClient(username)
+    prior_versions = prior_versions or []
+
+    prior_versions_block = _build_prior_versions_block(prior_versions)
 
     system_prompt = """
 You generate Spanish flashcard content for a beginner language learner.
@@ -98,6 +142,15 @@ English gloss: {english_gloss}
 
 Generate one short, beginner-friendly, natural Spanish sentence using this vocabulary item in context,
 plus a natural English translation.
+
+Previously used card versions for this vocab item:
+{prior_versions_block}
+
+Regeneration constraints:
+- Do not reuse any previous sentence exactly.
+- Do not lightly rephrase a previous sentence.
+- Avoid the same wording, structure, and scenario when possible.
+- Choose a clearly different everyday context from prior versions.
 
 Return JSON only.
 """.strip()
@@ -128,11 +181,43 @@ Return JSON only.
 
     if "```" in sentence or "```" in translation:
         raise ValueError("Generated content contained markdown/code fences")
-    
+
+    normalized_new_sentence = _normalize_for_duplicate_check(sentence)
+    prior_normalized_sentences = {
+        _normalize_for_duplicate_check(str(version.get("sentence") or ""))
+        for version in prior_versions
+        if version.get("sentence")
+    }
+
+    if normalized_new_sentence in prior_normalized_sentences:
+        raise ValueError(
+            f"Generated sentence duplicated a previous version for term {term!r}: {sentence!r}"
+        )
+
     return {
         "sentence": sentence,
         "translation": translation,
     }
+
+
+def should_regenerate(review_state: ReviewState) -> bool:
+    """
+    Return True if this card should be marked for regeneration.
+
+    MVP test rule:
+    - success_streak >= 1
+    - interval >= 1 day
+
+    Later, tighten this to your real production/demo threshold
+    (for example streak >= 3 and interval >= 21).
+    """
+    if review_state.needs_regeneration:
+        return False
+
+    return (
+        review_state.success_streak >= REGEN_SUCCESS_STREAK_THRESHOLD
+        and review_state.interval >= REGEN_INTERVAL_THRESHOLD_DAYS
+    )
 
 
 def ensure_generated_card_for_review_state(
@@ -140,16 +225,21 @@ def ensure_generated_card_for_review_state(
     username: str,
     review_state: ReviewState,
     model: str = DEFAULT_GENERATION_MODEL,
+    force: bool = False,
 ) -> Optional[GeneratedCard]:
     """
     Ensure a ReviewState has an active GeneratedCard.
 
-    Returns:
-        - existing GeneratedCard if one is already linked and found
-        - newly created GeneratedCard if generation succeeds
-        - None if generation could not be completed
+    force=False:
+        - return existing active GeneratedCard when available
+        - otherwise generate one
+
+    force=True:
+        - always generate a fresh GeneratedCard
+        - update current_generated_card_id to the new generation
+        - clear needs_regeneration on success
     """
-    if review_state.current_generated_card_id is not None:
+    if not force and review_state.current_generated_card_id is not None:
         existing = db_session.get(GeneratedCard, review_state.current_generated_card_id)
         if existing is not None:
             return existing
@@ -159,17 +249,30 @@ def ensure_generated_card_for_review_state(
         raise ValueError(f"Vocab {review_state.vocab_id} not found")
 
     existing_generations = db_session.exec(
-        select(GeneratedCard).where(GeneratedCard.review_state_id == review_state.id)
+        select(GeneratedCard)
+        .where(GeneratedCard.review_state_id == review_state.id)
+        .order_by(GeneratedCard.generation_number.asc())
     ).all()
+
     next_generation_number = (
         max((gc.generation_number for gc in existing_generations), default=0) + 1
     )
+
+    prior_versions = [
+        {
+            "generation_number": gc.generation_number,
+            "sentence": gc.sentence,
+            "translation": gc.translation,
+        }
+        for gc in existing_generations
+    ]
 
     content = generate_card_content_for_vocab(
         username=username,
         term=vocab.term,
         english_gloss=vocab.english_gloss,
         model=model,
+        prior_versions=prior_versions,
     )
 
     generated_card = GeneratedCard(
@@ -184,6 +287,7 @@ def ensure_generated_card_for_review_state(
     db_session.flush()
 
     review_state.current_generated_card_id = generated_card.id
+    review_state.needs_regeneration = False
     db_session.add(review_state)
     db_session.commit()
     db_session.refresh(generated_card)

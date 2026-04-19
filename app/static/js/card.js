@@ -19,6 +19,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const initialPreviews = (typeof INITIAL_PREVIEW_INTERVALS !== 'undefined') ? INITIAL_PREVIEW_INTERVALS : {};
     const initialDailyNewLimit = (typeof INITIAL_DAILY_NEW_LIMIT !== 'undefined') ? INITIAL_DAILY_NEW_LIMIT : 10;
 
+    const initialRegenStatus = (typeof INITIAL_REGEN_STATUS !== 'undefined')
+        ? INITIAL_REGEN_STATUS
+        : { needs_regeneration: false, regenerated_this_fetch: false, generation_number: null };
+
     const logoutModal = document.getElementById('logout-modal');
     const signOutBtn = document.getElementById('sign-out-btn');
     const modalConfirm = document.getElementById('modal-confirm');
@@ -27,6 +31,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const ratingDistributionBar = document.querySelector('.rating-distribution-bar.js-distribution-tooltip-target');
 
     const cardLoadingOverlay = document.getElementById('card-loading-overlay');
+
+    const regenStatus = document.getElementById('regen-status');
 
     let reviewStateId = typeof CURRENT_REVIEW_STATE_ID !== 'undefined' ? CURRENT_REVIEW_STATE_ID : null;
     let reviewCounts = {
@@ -106,6 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     updateRatingDistribution();
     updatePreviewLabels(initialPreviews);
+    syncRegenStatus(initialRegenStatus);
 
     if (!reviewStateId) {
         setDoneState();
@@ -329,6 +336,11 @@ document.addEventListener('DOMContentLoaded', () => {
             ratingButtonRow.classList.add('is-hidden');
         }
 
+        if (regenStatus) {
+            regenStatus.classList.add('is-hidden');
+            regenStatus.textContent = '';
+        }
+
         // Show a link to the stats page in the front card's label area
         const frontLabel = document.querySelector('.card-front .btn-label');
         if (frontLabel) {
@@ -357,6 +369,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+
+
     function syncStats(stats) {
         reviewCounts = {
             again: (stats.counts && stats.counts.again) || 0,
@@ -380,8 +394,37 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+
+    function syncRegenStatus(nextCard) {
+        if (!regenStatus) return;
+
+        if (!nextCard) {
+            regenStatus.classList.add('is-hidden');
+            regenStatus.textContent = '';
+            return;
+        }
+
+        if (nextCard.regenerated_this_fetch) {
+            const genNum = nextCard.generation_number ?? '?';
+            regenStatus.textContent = `Regenerated this fetch. Current card version: ${genNum}`;
+            regenStatus.classList.remove('is-hidden');
+            return;
+        }
+
+        if (nextCard.needs_regeneration) {
+            regenStatus.textContent = 'Pending regeneration on next fetch';
+            regenStatus.classList.remove('is-hidden');
+            return;
+        }
+
+        regenStatus.classList.add('is-hidden');
+        regenStatus.textContent = '';
+    }
+
+
     function applyNextCardResponse(nextCard) {
         function applyContent() {
+            syncRegenStatus(nextCard);
             hideCardLoading();
             if (nextCard) {
                 setCardContent(nextCard);
