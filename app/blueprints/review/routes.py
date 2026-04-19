@@ -60,6 +60,17 @@ def generate_cards():
         tts_voice_id=tts_voice_id,
     )
 
+def _advance_simulated_time_after_review(seconds: int = 15) -> None:
+    """
+    If simulated time is active, move it forward slightly after a review
+    so repeated ratings in one session do not all share the exact same timestamp.
+    """
+    sim_time = session.get("simulated_time")
+    if not sim_time:
+        return
+
+    current = datetime.fromisoformat(sim_time)
+    session["simulated_time"] = (current + timedelta(seconds=seconds)).isoformat()
 
 @review_bp.route("/rate", methods=["POST"])
 def rate_card():
@@ -80,6 +91,8 @@ def rate_card():
         result = process_review(user_id, int(review_state_id), rating)
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
+
+    _advance_simulated_time_after_review(seconds=15)
 
     next_card = get_next_card(user_id)
     stats = get_session_stats(user_id)

@@ -68,13 +68,13 @@ def get_queue_bucket(review_state: ReviewState) -> str:
 
     Buckets:
         - "new": never reviewed yet
-        - "learning": seen before, but not yet in long-interval review
+        - "learning": learning or relearning steps
         - "review": graduated into long-interval review
     """
     if review_state.repetitions == 0:
         return "new"
 
-    if review_state.interval and review_state.interval > 0:
+    if review_state.scheduler_state == 2:
         return "review"
 
     return "learning"
