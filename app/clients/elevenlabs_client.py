@@ -17,11 +17,21 @@ from elevenlabs.client import ElevenLabs
 
 APP_ID = "SeniorCapstone_Anki"
 
+DEFAULT_VOICE_ID = "U9jmr7kY6mMqS39kfA01"
+
+VOICE_OPTIONS = [
+    {"id": "U9jmr7kY6mMqS39kfA01", "name": "Alex"},
+    {"id": "rixsIpPlTphvsJd2mI03", "name": "Isabel"},
+    {"id": "ZCh4e9eZSUf41K4cmCEL", "name": "Emilio"},
+    {"id": "7TOiNISMahmVww93K9Xo", "name": "Eva"},
+    {"id": "B8gJV1IhpuegLxdpXFOE", "name": "Kuon"},
+    {"id": "fUjY9K2nAIwlALOwSiwc", "name": "Yui"},
+]
+
+
 class ElevenLabsClient:
-    ALLOWED_VOICES = {
-        "U9jmr7kY6mMqS39kfA01", "rixsIpPlTphvsJd2mI03", 
-        "ZCh4e9eZSUf41K4cmCEL", "7TOiNISMahmVww93K9Xo"
-    }
+    VOICE_OPTIONS = VOICE_OPTIONS
+    DEFAULT_VOICE_ID = DEFAULT_VOICE_ID
 
     def __init__(self, username):
         self.username = username
@@ -32,9 +42,7 @@ class ElevenLabsClient:
 
     def generate_audio(self, text, output_path, filename, voice_id):
         if voice_id is None:
-            voice_id = "U9jmr7kY6mMqS39kfA01"  # default voice
-        if voice_id not in self.ALLOWED_VOICES:
-            raise ValueError("Unauthorized voice ID")
+            voice_id = self.DEFAULT_VOICE_ID
 
         audio_generator = self.client.text_to_speech.convert(
             text=text,

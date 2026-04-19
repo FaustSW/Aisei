@@ -36,6 +36,8 @@ document.addEventListener('DOMContentLoaded', () => {
         easy:  (initial.counts && initial.counts.easy)  || 0,
     };
     let isFlipping = false;
+    let currentAudio = null;
+    let audioRequestToken = 0;
     const distributionTooltip = createDistributionTooltip();
 
     function createDistributionTooltip() {
@@ -113,7 +115,15 @@ document.addEventListener('DOMContentLoaded', () => {
     async function speakWithElevenLabs(text, voiceId) {
         if (!text || !text.trim()) return;
 
+        const requestToken = ++audioRequestToken;
+
         try {
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio.currentTime = 0;
+                currentAudio = null;
+            }
+
             const response = await fetch('/review/generate_audio', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -125,9 +135,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const data = await response.json();
 
+            if (requestToken !== audioRequestToken) {
+                return;
+            }
+
             if (data.success && data.audio_url) {
                 const audio = new Audio(data.audio_url);
-                audio.play();
+                currentAudio = audio;
+
+                audio.addEventListener('ended', () => {
+                    if (currentAudio === audio) {
+                        currentAudio = null;
+                    }
+                });
+
+                await audio.play();
             } else {
                 console.error('ElevenLabs Error:', data.error);
             }
@@ -136,12 +158,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function getSelectedVoiceId() {
+        const savedVoice = localStorage.getItem('selectedVoice');
+        if (savedVoice) return savedVoice;
+
+        if (typeof INITIAL_TTS_VOICE_ID !== 'undefined' && INITIAL_TTS_VOICE_ID) {
+            return INITIAL_TTS_VOICE_ID;
+        }
+
+        return "U9jmr7kY6mMqS39kfA01";
+    }
+
     if (frontText) {
         frontText.addEventListener('click', (e) => {
             e.stopPropagation();
             const word = frontText.textContent?.trim();
             if (!word || word === '🎉 Done!') return;
-            speakWithElevenLabs(word, "U9jmr7kY6mMqS39kfA01");
+            speakWithElevenLabs(word, getSelectedVoiceId());
         });
     }
 
@@ -150,7 +183,7 @@ document.addEventListener('DOMContentLoaded', () => {
             e.stopPropagation();
             const word = backWord.textContent?.trim();
             if (!word || word === 'No more cards due.') return;
-            speakWithElevenLabs(word, "U9jmr7kY6mMqS39kfA01");
+            speakWithElevenLabs(word, getSelectedVoiceId());
         });
     }
 
@@ -159,7 +192,7 @@ document.addEventListener('DOMContentLoaded', () => {
             e.stopPropagation();
             const sentence = frontSentence.textContent?.trim();
             if (!sentence) return;
-            speakWithElevenLabs(sentence, "U9jmr7kY6mMqS39kfA01");
+            speakWithElevenLabs(sentence, getSelectedVoiceId());
         });
     }
 
@@ -168,7 +201,7 @@ document.addEventListener('DOMContentLoaded', () => {
             e.stopPropagation();
             const sentence = backSentence.textContent?.trim();
             if (!sentence) return;
-            speakWithElevenLabs(sentence, "U9jmr7kY6mMqS39kfA01");
+            speakWithElevenLabs(sentence, getSelectedVoiceId());
         });
     }
 

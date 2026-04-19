@@ -8,7 +8,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (document.getElementById('voice-dropdown')) {
         loadVoices();
-        loadSavedVoice();
     }
 
     if (document.getElementById('newOpenAIKey')) {
@@ -93,10 +92,14 @@ async function loadVoices() {
     if (!dropdown) return;
 
     try {
-        const response = await fetch('/settings/voices'); 
-        const voicesList = await response.json();
+        const response = await fetch('/settings/voices');
+        const data = await response.json();
+
+        const voicesList = data.voices || [];
+        const selectedVoiceId = data.selected_voice_id || null;
 
         dropdown.innerHTML = '';
+
         voicesList.forEach(voice => {
             const option = document.createElement('option');
             option.value = voice.id;
@@ -104,8 +107,13 @@ async function loadVoices() {
             dropdown.appendChild(option);
         });
 
-        const savedVoice = localStorage.getItem('selectedVoice');
-        if (savedVoice) dropdown.value = savedVoice;
+        const localVoice = localStorage.getItem('selectedVoice');
+        const effectiveVoice = localVoice || selectedVoiceId;
+
+        if (effectiveVoice) {
+            dropdown.value = effectiveVoice;
+            localStorage.setItem('selectedVoice', effectiveVoice);
+        }
     } catch (error) {
         console.error('Error loading voices:', error);
     }
@@ -116,12 +124,30 @@ function changeVoice() {
     const voiceId = dropdown?.value;
     if (!voiceId) return;
 
-    localStorage.setItem('selectedVoice', voiceId);
     fetch('/settings/save-voice', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ voice_id: voiceId })
-    });
+    })
+        .then(res => res.json())
+        .then(data => {
+            if (data.ok && data.voice_id) {
+                localStorage.setItem('selectedVoice', data.voice_id);
+            } else {
+                console.error('Error saving voice:', data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error saving voice:', error);
+        });
+}
+
+function loadSavedVoice() {
+    const dropdown = document.getElementById('voice-dropdown');
+    if (!dropdown) return;
+
+    const savedVoice = localStorage.getItem('selectedVoice');
+    if (savedVoice) dropdown.value = savedVoice;
 }
 
 // ==============================================================================================================

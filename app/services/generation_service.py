@@ -195,8 +195,10 @@ def handle_audio_generation(username: str, text: str, voice_id: str | None):
     """
     Coordinates between application logic and the ElevenLabs transport layer.
     """
-    text_hash = hashlib.md5(text.encode()).hexdigest()
-    filename = f"{text_hash}.mp3"
+    voice_key = voice_id or ElevenLabsClient.DEFAULT_VOICE_ID
+    cache_key = f"{voice_key}|{text}"
+    text_hash = hashlib.md5(cache_key.encode()).hexdigest()
+    filename = f"{voice_key}_{text_hash}.mp3"
     
     # 2. Define the public-facing directory
     output_dir = "app/static/audio/generated"

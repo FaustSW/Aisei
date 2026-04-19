@@ -7,6 +7,7 @@ Current responsibilities:
 - Create a default settings row for new users
 - Load a user's settings, creating them if missing
 - Read/update the daily new card limit
+- Read/update the selected ElevenLabs voice
 
 Future settings should also be managed here so the rest of the app can stay
 decoupled from storage details.
@@ -14,8 +15,9 @@ decoupled from storage details.
 
 from __future__ import annotations
 
+from app.clients.elevenlabs_client import ElevenLabsClient
 from app.db import get_session
-from app.models.user_settings import UserSettings
+from app.models.user_settings import UserSettings, DEFAULT_TTS_VOICE_ID
 
 DEFAULT_DAILY_NEW_LIMIT = 20
 MIN_DAILY_NEW_LIMIT = 0
@@ -25,6 +27,14 @@ MAX_DAILY_NEW_LIMIT = 999
 def clamp_daily_new_limit(value: int) -> int:
     """Clamp the daily new-card limit to a safe integer range."""
     return max(MIN_DAILY_NEW_LIMIT, min(MAX_DAILY_NEW_LIMIT, int(value)))
+
+
+def validate_tts_voice_id(voice_id: str | None) -> str:
+    """Normalize a selected ElevenLabs voice ID and return a safe persisted value."""
+    if not voice_id:
+        return DEFAULT_TTS_VOICE_ID
+
+    return str(voice_id).strip()
 
 
 def get_or_create_user_settings(user_id: int, db_session=None) -> UserSettings:
@@ -43,7 +53,14 @@ def get_or_create_user_settings(user_id: int, db_session=None) -> UserSettings:
             settings = UserSettings(
                 user_id=user_id,
                 daily_new_limit=DEFAULT_DAILY_NEW_LIMIT,
+                tts_voice_id=DEFAULT_TTS_VOICE_ID,
             )
+            db.add(settings)
+            db.commit()
+            db.refresh(settings)
+
+        if not settings.tts_voice_id:
+            settings.tts_voice_id = DEFAULT_TTS_VOICE_ID
             db.add(settings)
             db.commit()
             db.refresh(settings)
@@ -77,6 +94,31 @@ def update_daily_new_limit(user_id: int, new_limit: int, db_session=None) -> Use
     try:
         settings = get_or_create_user_settings(user_id, db_session=db)
         settings.daily_new_limit = clamp_daily_new_limit(new_limit)
+        db.add(settings)
+        db.commit()
+        db.refresh(settings)
+        return settings
+    finally:
+        if owns_session:
+            db.close()
+
+
+def get_tts_voice_id(user_id: int, db_session=None) -> str:
+    """Load the user's persisted ElevenLabs voice selection."""
+    settings = get_or_create_user_settings(user_id, db_session=db_session)
+    return validate_tts_voice_id(settings.tts_voice_id)
+
+
+def update_tts_voice_id(user_id: int, voice_id: str, db_session=None) -> UserSettings:
+    """
+    Persist a new ElevenLabs voice selection for the user and return updated settings.
+    """
+    owns_session = db_session is None
+    db = db_session or get_session()
+
+    try:
+        settings = get_or_create_user_settings(user_id, db_session=db)
+        settings.tts_voice_id = validate_tts_voice_id(voice_id)
         db.add(settings)
         db.commit()
         db.refresh(settings)

@@ -18,6 +18,13 @@ from flask import Blueprint, request, jsonify, session
 
 from app.services.queue_service import invalidate_static_daily_queue
 from app.services.settings_service import update_daily_new_limit
+from app.clients.elevenlabs_client import ElevenLabsClient
+from app.models.user_settings import DEFAULT_TTS_VOICE_ID
+from app.services.settings_service import (
+    update_daily_new_limit,
+    get_tts_voice_id,
+    update_tts_voice_id,
+)
 
 settings_bp = Blueprint('themes', __name__)
 
@@ -145,4 +152,46 @@ def check_sim_time():
     return jsonify({
         "active": bool(sim_time),
         "sim_time": sim_time,
+    })
+
+
+@settings_bp.route("/voices", methods=["GET"])
+def get_voices():
+    """Return allowed ElevenLabs voices plus the user's currently selected voice."""
+    user_id = session.get("user_id")
+    selected_voice_id = DEFAULT_TTS_VOICE_ID
+
+    if user_id:
+        try:
+            selected_voice_id = get_tts_voice_id(user_id)
+        except Exception:
+            selected_voice_id = DEFAULT_TTS_VOICE_ID
+
+    return jsonify({
+        "voices": ElevenLabsClient.VOICE_OPTIONS,
+        "selected_voice_id": selected_voice_id,
+    })
+
+
+@settings_bp.route("/save-voice", methods=["POST"])
+def save_voice():
+    """Persist the user's selected ElevenLabs voice."""
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Not logged in"}), 401
+
+    data = request.get_json(force=True)
+    voice_id = data.get("voice_id")
+
+    if not voice_id:
+        return jsonify({"error": "voice_id is required"}), 400
+
+    try:
+        settings = update_tts_voice_id(user_id, voice_id)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+
+    return jsonify({
+        "ok": True,
+        "voice_id": settings.tts_voice_id,
     })

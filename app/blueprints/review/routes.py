@@ -29,6 +29,12 @@ from app.services.generation_service import (
     handle_audio_generation
 )
 
+from app.services.settings_service import (
+    get_daily_new_limit,
+    get_tts_voice_id,
+    update_daily_new_limit,
+)
+
 
 review_bp = Blueprint("review", __name__, template_folder="templates")
 
@@ -44,11 +50,14 @@ def generate_cards():
     stats = get_session_stats(user_id)
     daily_new_limit = get_daily_new_limit(user_id)
 
+    tts_voice_id = get_tts_voice_id(user_id)
+
     return render_template(
         "review.html",
         card=card,
         stats=stats,
         daily_new_limit=daily_new_limit,
+        tts_voice_id=tts_voice_id,
     )
 
 
