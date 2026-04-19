@@ -1,12 +1,15 @@
 document.addEventListener('DOMContentLoaded', () => {
     const cardInner = document.getElementById('card-inner');
     const frontText = document.getElementById('front-text');
+    const backWord = document.getElementById('back-word');
     const backText = document.getElementById('back-text');
     const frontSentence = document.getElementById('front-sentence');
+    const backSentence = document.getElementById('back-sentence');
     const backTranslation = document.getElementById('back-translation');
+    const frontSentenceRow = document.getElementById('front-sentence-row');
+    const backSentenceRow = document.getElementById('back-sentence-row');
+    const backDivider = document.getElementById('back-divider');
     const buttons = document.querySelectorAll('.card-btn');
-    const frontAudioBtn = document.getElementById('front-audio-btn');
-    const backAudioBtn = document.getElementById('back-audio-btn');
     const ratingButtonRow = document.getElementById('rating-button-row');
 
     const dailyNewLimitInput = document.getElementById('daily-new-limit-input');
@@ -17,11 +20,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const initialDailyNewLimit = (typeof INITIAL_DAILY_NEW_LIMIT !== 'undefined') ? INITIAL_DAILY_NEW_LIMIT : 10;
 
     const logoutModal = document.getElementById('logout-modal');
-    const signOutBtn = document.getElementById('sign-out-btn'); 
+    const signOutBtn = document.getElementById('sign-out-btn');
     const modalConfirm = document.getElementById('modal-confirm');
     const modalCancel = document.getElementById('modal-cancel');
     const modalMessage = document.getElementById('modal-message');
     const ratingDistributionBar = document.querySelector('.rating-distribution-bar.js-distribution-tooltip-target');
+
+    const cardLoadingOverlay = document.getElementById('card-loading-overlay');
 
     let reviewStateId = typeof CURRENT_REVIEW_STATE_ID !== 'undefined' ? CURRENT_REVIEW_STATE_ID : null;
     let reviewCounts = {
@@ -105,55 +110,67 @@ document.addEventListener('DOMContentLoaded', () => {
         disableButtons();
     }
 
-// 1. Replace the old speakText with this API-driven version
-async function speakWithElevenLabs(text, voiceId) {
-    if (!text || !text.trim()) return;
+    async function speakWithElevenLabs(text, voiceId) {
+        if (!text || !text.trim()) return;
 
-    try {
-        // We call our Flask route instead of the browser's TTS engine
-        const response = await fetch('/review/generate_audio', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                text: text.trim(),
-                voice_id: voiceId
-            })
-        });
+        try {
+            const response = await fetch('/review/generate_audio', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    text: text.trim(),
+                    voice_id: voiceId
+                })
+            });
 
-        const data = await response.json();
+            const data = await response.json();
 
-        if (data.success && data.audio_url) {
-            // Play the file returned by the server
-            const audio = new Audio(data.audio_url);
-            audio.play();
-        } else {
-            console.error('ElevenLabs Error:', data.error);
+            if (data.success && data.audio_url) {
+                const audio = new Audio(data.audio_url);
+                audio.play();
+            } else {
+                console.error('ElevenLabs Error:', data.error);
+            }
+        } catch (err) {
+            console.error('Failed to communicate with audio service:', err);
         }
-    } catch (err) {
-        console.error('Failed to communicate with audio service:', err);
     }
-}
 
-// 2. Update the event listeners to use the new function
-if (frontAudioBtn) {
-    frontAudioBtn.addEventListener('click', () => {
-        const parts = [frontText?.textContent, frontSentence?.textContent]
-            .filter(t => t && t.trim());
-        
-        // Using ID: U9jmr7kY6mMqS39kfA01 for the front
-        speakWithElevenLabs(parts.join('. '), "U9jmr7kY6mMqS39kfA01");
-    });
-}
+    if (frontText) {
+        frontText.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const word = frontText.textContent?.trim();
+            if (!word || word === '🎉 Done!') return;
+            speakWithElevenLabs(word, "U9jmr7kY6mMqS39kfA01");
+        });
+    }
 
-if (backAudioBtn) {
-    backAudioBtn.addEventListener('click', () => {
-        const parts = [backText?.textContent, backTranslation?.textContent]
-            .filter(t => t && t.trim());
-        
-        // Using ID: rixsIpPlTphvsJd2mI03 for the back
-        speakWithElevenLabs(parts.join('. '), "rixsIpPlTphvsJd2mI03");
-    });
-}
+    if (backWord) {
+        backWord.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const word = backWord.textContent?.trim();
+            if (!word || word === 'No more cards due.') return;
+            speakWithElevenLabs(word, "U9jmr7kY6mMqS39kfA01");
+        });
+    }
+
+    if (frontSentence) {
+        frontSentence.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const sentence = frontSentence.textContent?.trim();
+            if (!sentence) return;
+            speakWithElevenLabs(sentence, "U9jmr7kY6mMqS39kfA01");
+        });
+    }
+
+    if (backSentence) {
+        backSentence.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const sentence = backSentence.textContent?.trim();
+            if (!sentence) return;
+            speakWithElevenLabs(sentence, "U9jmr7kY6mMqS39kfA01");
+        });
+    }
 
     function flipCard() {
         if (cardInner) cardInner.classList.toggle('is-flipped');
@@ -163,13 +180,40 @@ if (backAudioBtn) {
         if (cardInner) cardInner.classList.remove('is-flipped');
     }
 
+    function showCardLoading() {
+        if (cardLoadingOverlay) {
+            cardLoadingOverlay.classList.remove('is-hidden');
+        }
+
+        if (ratingButtonRow) {
+            ratingButtonRow.classList.add('is-hidden');
+        }
+
+        disableButtons();
+    }
+
+    function hideCardLoading() {
+        if (cardLoadingOverlay) {
+            cardLoadingOverlay.classList.add('is-hidden');
+        }
+
+        if (reviewStateId && ratingButtonRow) {
+            ratingButtonRow.classList.remove('is-hidden');
+        }
+    }
+
     function setCardContent(nextCard) {
         if (frontText) {
             frontText.textContent = nextCard.term || '';
         }
 
+        if (backWord) {
+            backWord.textContent = nextCard.term || '';
+        }
+
         if (backText) {
             backText.textContent = nextCard.english_gloss || '';
+            backText.style.display = nextCard.english_gloss ? '' : 'none';
         }
 
         if (frontSentence) {
@@ -177,17 +221,26 @@ if (backAudioBtn) {
             frontSentence.style.display = nextCard.sentence ? '' : 'none';
         }
 
+        if (backSentence) {
+            backSentence.textContent = nextCard.sentence || '';
+            backSentence.style.display = nextCard.sentence ? '' : 'none';
+        }
+
         if (backTranslation) {
             backTranslation.textContent = nextCard.translation || '';
             backTranslation.style.display = nextCard.translation ? '' : 'none';
         }
 
-        if (frontAudioBtn) {
-            frontAudioBtn.classList.remove('is-hidden');
+        if (frontSentenceRow) {
+            frontSentenceRow.classList.toggle('is-hidden', !nextCard.sentence);
         }
 
-        if (backAudioBtn) {
-            backAudioBtn.classList.remove('is-hidden');
+        if (backSentenceRow) {
+            backSentenceRow.classList.toggle('is-hidden', !nextCard.sentence);
+        }
+
+        if (backDivider) {
+            backDivider.classList.toggle('is-hidden', !nextCard.english_gloss && !nextCard.translation);
         }
 
         if (ratingButtonRow) {
@@ -197,13 +250,19 @@ if (backAudioBtn) {
 
     function setDoneState() {
         flipToFront();
+        hideCardLoading();
 
         if (frontText) {
             frontText.textContent = '🎉 Done!';
         }
 
+        if (backWord) {
+            backWord.textContent = 'No more cards due.';
+        }
+
         if (backText) {
-            backText.textContent = 'No more cards due.';
+            backText.textContent = '';
+            backText.style.display = 'none';
         }
 
         if (frontSentence) {
@@ -211,17 +270,26 @@ if (backAudioBtn) {
             frontSentence.style.display = 'none';
         }
 
+        if (backSentence) {
+            backSentence.textContent = '';
+            backSentence.style.display = 'none';
+        }
+
         if (backTranslation) {
             backTranslation.textContent = '';
             backTranslation.style.display = 'none';
         }
 
-        if (frontAudioBtn) {
-            frontAudioBtn.classList.add('is-hidden');
+        if (frontSentenceRow) {
+            frontSentenceRow.classList.add('is-hidden');
         }
 
-        if (backAudioBtn) {
-            backAudioBtn.classList.add('is-hidden');
+        if (backSentenceRow) {
+            backSentenceRow.classList.add('is-hidden');
+        }
+
+        if (backDivider) {
+            backDivider.classList.add('is-hidden');
         }
 
         if (ratingButtonRow) {
@@ -281,6 +349,7 @@ if (backAudioBtn) {
 
     function applyNextCardResponse(nextCard) {
         function applyContent() {
+            hideCardLoading();
             if (nextCard) {
                 setCardContent(nextCard);
                 updatePreviewLabels(nextCard.preview_intervals || {});
@@ -317,7 +386,7 @@ if (backAudioBtn) {
 
     if (cardInner) {
         cardInner.addEventListener('click', (e) => {
-            if (e.target.closest('.card-btn') || e.target.closest('.audio-btn')) return;
+            if (e.target.closest('.card-btn') || e.target.closest('.clickable-audio')) return;
             const rect = cardInner.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const cardWidth = rect.width;
@@ -331,6 +400,7 @@ if (backAudioBtn) {
         btn.addEventListener('click', () => {
             if (isFlipping || !reviewStateId) return;
             isFlipping = true;
+            showCardLoading();
 
             const rating = parseInt(btn.dataset.action, 10);
 
@@ -346,6 +416,7 @@ if (backAudioBtn) {
                 .then(data => {
                     if (data.error) {
                         console.error('Rating error:', data.error);
+                        hideCardLoading();
                         isFlipping = false;
                         return;
                     }
@@ -358,6 +429,7 @@ if (backAudioBtn) {
                 })
                 .catch(err => {
                     console.error('Request failed:', err);
+                    hideCardLoading();
                     isFlipping = false;
                 });
         });

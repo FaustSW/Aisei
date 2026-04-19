@@ -68,42 +68,36 @@ def generate_card_content_for_vocab(
     model: str = DEFAULT_GENERATION_MODEL,
 ) -> dict:
     """
-    Generate one beginner-friendly Spanish sentence and one English translation
+    Generate one natural Spanish sentence and one English translation
     for the provided vocab term.
     """
     client = GPTClient(username)
 
     system_prompt = """
-You generate Spanish flashcard content for beginner learners.
+You generate Spanish flashcard content for a beginner language learner.
 
-Return ONLY one valid JSON object with exactly these keys:
+Return exactly one valid JSON object with these keys only:
 {
   "sentence": "...",
   "translation": "..."
 }
 
-Hard requirements:
-1. Output must be valid JSON only.
-2. Do not include markdown, code fences, commentary, or extra keys.
-3. "sentence" must be exactly one natural Spanish sentence.
-4. "translation" must be the natural English translation of that sentence.
-5. The Spanish sentence must contain the exact target vocab term provided by the user.
-6. The sentence must be short: 4 to 8 words.
-7. The sentence must be beginner-friendly and easy to understand.
-8. Avoid slang, idioms, rare words, and advanced grammar.
-9. Do not define the word; use it naturally in context.
-10. Do not use the English gloss inside the Spanish sentence unless it is identical to the Spanish target term.
-
-If you cannot satisfy all constraints perfectly, still return valid JSON and prioritize:
-valid JSON > exact target term usage > short simple sentence > natural translation.
+Requirements:
+- Write one short, natural Spanish sentence using the target vocabulary item in context.
+- Conjugated or inflected forms are allowed when appropriate.
+- Prefer clear, concrete, everyday sentences that a beginner could understand.
+- Use the most natural phrasing a real person would normally say, not an overly literal construction.
+- Avoid awkward, overly specific, or unnatural combinations of details.
+- Also provide a natural English translation.
+- Return JSON only with no extra text.
 """.strip()
 
     user_prompt = f"""
 Target Spanish vocab term: {term}
 English gloss: {english_gloss}
 
-Generate one beginner-friendly Spanish sentence using the exact target term,
-plus one natural English translation.
+Generate one short, beginner-friendly, natural Spanish sentence using this vocabulary item in context,
+plus a natural English translation.
 
 Return JSON only.
 """.strip()
@@ -134,27 +128,11 @@ Return JSON only.
 
     if "```" in sentence or "```" in translation:
         raise ValueError("Generated content contained markdown/code fences")
-
-    normalized_sentence = sentence.lower()
-    normalized_term = term.lower()
-
-    if normalized_term not in normalized_sentence:
-        raise ValueError(
-            f"Generated sentence did not contain target term {term!r}: {sentence!r}"
-        )
-
-    word_count = len(sentence.split())
-    if word_count < 4 or word_count > 8:
-        raise ValueError(
-            f"Generated sentence length out of bounds ({word_count} words): {sentence!r}"
-        )
-
-    sentence_enders = sentence.count(".") + sentence.count("!") + sentence.count("?")
-    if sentence_enders > 1:
-        raise ValueError(f"Generated output was not exactly one sentence: {sentence!r}")
-
-    if sentence.lower() == translation.lower():
-        raise ValueError("Sentence and translation should not be identical")
+    
+    return {
+        "sentence": sentence,
+        "translation": translation,
+    }
 
 
 def ensure_generated_card_for_review_state(

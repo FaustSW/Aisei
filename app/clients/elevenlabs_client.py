@@ -31,10 +31,10 @@ class ElevenLabsClient:
         self.client = ElevenLabs(api_key=api_key)
 
     def generate_audio(self, text, output_path, filename, voice_id):
-        if voice_id not in self.ALLOWED_VOICES:
-            raise ValueError("Unauthorized voice ID")
         if voice_id is None:
             voice_id = "U9jmr7kY6mMqS39kfA01"  # default voice
+        if voice_id not in self.ALLOWED_VOICES:
+            raise ValueError("Unauthorized voice ID")
 
         audio_generator = self.client.text_to_speech.convert(
             text=text,

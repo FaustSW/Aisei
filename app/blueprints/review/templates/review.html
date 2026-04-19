@@ -46,7 +46,12 @@
 
             <div class="card-face card-front">
                 <div class="content-area">
-                    <div class="large-text" id="front-text">
+                    <div
+                        class="large-text clickable-audio"
+                        id="front-text"
+                        title="Play Spanish word audio"
+                        aria-label="Play Spanish word audio"
+                    >
                         {% if card %}
                             {{ card.term }}
                         {% else %}
@@ -54,23 +59,22 @@
                         {% endif %}
                     </div>
 
-                    {% if card and card.sentence %}
-                    <div class="sentence-text" id="front-sentence">
-                        {{ card.sentence }}
+                    <div class="sentence-row {% if not card or not card.sentence %}is-hidden{% endif %}" id="front-sentence-row">
+                        {% if card and card.sentence %}
+                        <div
+                            class="sentence-text clickable-audio"
+                            id="front-sentence"
+                            title="Play Spanish sentence audio"
+                            aria-label="Play Spanish sentence audio"
+                        >
+                            {{ card.sentence }}
+                        </div>
+                        {% else %}
+                        <div class="sentence-text is-hidden clickable-audio" id="front-sentence"></div>
+                        {% endif %}
                     </div>
-                    {% else %}
-                    <div class="sentence-text is-hidden" id="front-sentence"></div>
-                    {% endif %}
-
-                    <button
-                        class="audio-btn {% if not card %}is-hidden{% endif %}"
-                        id="front-audio-btn"
-                        title="Listen"
-                        aria-label="Listen to front of card"
-                    >
-                        🔊
-                    </button>
                 </div>
+
                 <div class="button-row">
                     <div class="btn-label">
                         {% if card %}
@@ -84,30 +88,49 @@
 
             <div class="card-face card-back">
                 <div class="content-area">
-                    <div class="large-text" id="back-text">
+                    <div
+                        class="large-text clickable-audio"
+                        id="back-word"
+                        title="Play Spanish word audio"
+                        aria-label="Play Spanish word audio"
+                    >
                         {% if card %}
-                            {{ card.english_gloss }}
+                            {{ card.term }}
                         {% else %}
                             No more cards due.
                         {% endif %}
                     </div>
 
+                    <div class="gloss-text" id="back-text">
+                        {% if card %}
+                            {{ card.english_gloss }}
+                        {% endif %}
+                    </div>
+
+                    <div class="card-divider {% if not card %}is-hidden{% endif %}" id="back-divider"></div>
+
+                    <div class="sentence-row {% if not card or not card.sentence %}is-hidden{% endif %}" id="back-sentence-row">
+                        {% if card and card.sentence %}
+                        <div
+                            class="sentence-text clickable-audio"
+                            id="back-sentence"
+                            title="Play Spanish sentence audio"
+                            aria-label="Play Spanish sentence audio"
+                        >
+                            {{ card.sentence }}
+                        </div>
+                        {% else %}
+                        <div class="sentence-text is-hidden clickable-audio" id="back-sentence"></div>
+                        {% endif %}
+                    </div>
+
                     {% if card and card.translation %}
-                    <div class="sentence-text" id="back-translation">
+                    <div class="translation-text" id="back-translation">
                         {{ card.translation }}
                     </div>
                     {% else %}
-                    <div class="sentence-text is-hidden" id="back-translation"></div>
+                    <div class="translation-text is-hidden" id="back-translation"></div>
                     {% endif %}
-
-                    <button
-                        class="audio-btn {% if not card %}is-hidden{% endif %}"
-                        id="back-audio-btn"
-                        title="Listen"
-                        aria-label="Listen to back of card"
-                    >
-                        🔊
-                    </button>
                 </div>
 
                 <div class="button-row" id="rating-button-row">
@@ -136,6 +159,13 @@
                         </span>
                     </button>
                 </div>
+            </div>
+
+        </div>
+        <div class="card-loading-overlay is-hidden" id="card-loading-overlay" aria-live="polite">
+            <div class="card-loading-content">
+                <div class="card-loading-spinner"></div>
+                <div class="card-loading-text">Loading next card...</div>
             </div>
         </div>
     </div>

@@ -8,7 +8,7 @@
     --accent-color: #007bff;
     --button-bg: #e0e0e0;
     --transition-speed: 0.3s;
-    --card-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
 }
 
 [data-theme="dark"] {
@@ -22,8 +22,8 @@
 /* ==========================================================================
    RESET & BASE STYLES
    ========================================================================== */
-
-html, body {
+html,
+body {
     margin: 0;
     padding: 0;
     width: 100%;
@@ -41,13 +41,13 @@ body {
    LAYOUT WRAPPERS
    ========================================================================== */
 .wrapper {
+    position: relative;
+    z-index: 2;
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100%;
     width: 100%;
-    position: relative;
-    z-index: 2;
+    height: 100%;
     background: transparent;
     perspective: 2000px;
 }
@@ -71,29 +71,29 @@ body {
     display: flex;
     align-items: center;
     gap: 5px;
-    background: var(--bg-card);
+    min-height: 30px;
     padding: 8px 12px;
+    background: var(--bg-card);
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     font-weight: bold;
     color: var(--text-main);
-    min-height: 30px;
 }
 
 /* Shared style for small action buttons in the stats bar */
 .stat-btn {
     display: inline-block;
     padding: 6px 14px;
+    border: none;
     border-radius: 6px;
+    background: transparent;
+    color: var(--text-main);
     font-size: 0.85rem;
     font-weight: bold;
     text-align: center;
-    cursor: pointer;
-    border: none;
     text-decoration: none;
+    cursor: pointer;
     transition: opacity 0.2s, transform 0.1s;
-    color: var(--text-main);
-    background: transparent;
 }
 
 .stat-btn:hover {
@@ -106,7 +106,6 @@ body {
     color: white;
 }
 
-
 /* "View your stats" link shown on the done card face */
 .done-stats-link {
     display: inline-block;
@@ -114,8 +113,8 @@ body {
     border-radius: 8px;
     background: var(--primary-gradient, linear-gradient(135deg, #667eea, #764ba2));
     color: white;
-    font-weight: bold;
     font-size: 0.95rem;
+    font-weight: bold;
     text-decoration: none;
     transition: opacity 0.2s, transform 0.1s;
 }
@@ -132,25 +131,25 @@ body {
     position: absolute;
     top: 20px;
     left: 50%;
-    transform: translateX(-50%);
     z-index: 10;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 12px;
+    transform: translateX(-50%);
 }
 
 .sim-time-display {
     min-width: 260px;
-    text-align: center;
     padding: 10px 18px;
-    border-radius: 8px;
     background: rgba(255, 255, 255, 0.92);
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
     color: #333333;
     font-size: 1rem;
     font-weight: 600;
     font-family: inherit;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+    text-align: center;
 }
 
 .sim-time-top-controls {
@@ -167,17 +166,17 @@ body {
 
 .sim-time-controls {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
     flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
 }
 
 .sim-time-small-btn {
+    width: 40px;
+    min-width: 0;
     padding: 10px 14px;
     font-size: 16px;
-    min-width: 0;
-    width: 40px;
 }
 
 .sim-time-input-group {
@@ -186,14 +185,12 @@ body {
 }
 
 .sim-time-input {
+    box-sizing: border-box;
     width: 110px;
     height: 44px;
-    box-sizing: border-box;
-
     padding: 12px 44px 12px 10px;
-    border-radius: 5px;
     border: 1px solid #cfcfcf;
-
+    border-radius: 5px;
     font-size: 16px;
     font-weight: bold;
     font-family: inherit;
@@ -203,20 +200,17 @@ body {
     position: absolute;
     top: 50%;
     right: 6px;
-    transform: translateY(-50%);
-
-    height: 34px;
     width: 34px;
+    height: 34px;
     padding: 0;
-
     border: none;
     border-radius: 6px;
     background: #e0e0e0;
     cursor: pointer;
-
     font-size: 16px;
     font-weight: 900;
     line-height: 1;
+    transform: translateY(-50%);
 }
 
 .sim-time-apply-btn:hover {
@@ -234,18 +228,19 @@ body {
     width: 55%;
     max-width: 1000px;
     aspect-ratio: 16 / 9;
-    perspective: 1500px;
     background: transparent;
+    perspective: 1500px;
     overflow: visible;
+    position: relative;
 }
 
 .card-inner {
     position: relative;
     width: 100%;
     height: 100%;
-    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-    transform-style: preserve-3d;
     background: transparent;
+    transform-style: preserve-3d;
+    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .is-flipped {
@@ -254,16 +249,16 @@ body {
 
 .card-face {
     position: absolute;
-    width: 100%;
-    height: 100%;
-    backface-visibility: hidden;
-    -webkit-backface-visibility: hidden;
     display: flex;
     flex-direction: column;
-    border-radius: 15px;
-    background-color: var(--card-bg);
-    box-shadow: var(--card-shadow);
+    width: 100%;
+    height: 100%;
     overflow: hidden;
+    background-color: var(--card-bg);
+    border-radius: 15px;
+    box-shadow: var(--card-shadow);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
 }
 
 .card-back {
@@ -286,14 +281,80 @@ body {
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    gap: 12px;
     padding: 20px;
     text-align: center;
-    gap: 12px;
+}
+
+.card-back .content-area {
+    gap: 18px;
 }
 
 .large-text {
+    color: #000000;
     font-size: 3rem;
     font-weight: bold;
+    text-align: center;
+    cursor: pointer;
+}
+
+.gloss-text {
+    max-width: 85%;
+    color: #000000;
+    font-size: 1.7rem;
+    font-weight: 700;
+    line-height: 1.35;
+    text-align: center;
+}
+
+.sentence-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    max-width: 85%;
+}
+
+.sentence-text {
+    max-width: 100%;
+    color: #000000;
+    font-size: 2rem;
+    font-weight: 600;
+    font-style: normal;
+    line-height: 1.5;
+    text-align: center;
+    cursor: pointer;
+}
+
+.sentence-row .sentence-text {
+    flex: 0 1 auto;
+    max-width: 100%;
+    text-align: center;
+}
+
+.translation-text {
+    max-width: 85%;
+    color: #000000;
+    font-size: 1.8rem;
+    font-weight: 600;
+    line-height: 1.45;
+    text-align: center;
+}
+
+.card-divider {
+    width: 75%;
+    height: 1px;
+    margin: 4px 0 8px;
+    background: rgba(0, 0, 0, 0.22);
+}
+
+.clickable-audio {
+    cursor: pointer;
+    transition: opacity 0.15s ease;
+}
+
+.clickable-audio:hover {
+    opacity: 0.82;
 }
 
 .button-row {
@@ -301,8 +362,8 @@ body {
     display: flex;
     justify-content: space-evenly;
     align-items: center;
-    background-color: rgba(0,0,0,0.03);
-    border-top: 1px solid rgba(0,0,0,0.05);
+    background-color: rgba(0, 0, 0, 0.03);
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .btn-wrapper {
@@ -352,38 +413,56 @@ button:hover {
 .icon-btn {
     background: none;
     border: none;
-    cursor: pointer;
-    font-size: 1.5rem;
     color: var(--text-color);
-}
-
-.audio-btn {
-    background: none;
-    border: none;
+    font-size: 1.5rem;
     cursor: pointer;
-    font-size: 1.8rem;
-    color: var(--text-color, #333);
-    padding: 8px;
+}
+
+/* ==========================================================================
+   CARD LOADING
+   ========================================================================== */
+
+   .card-loading-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 20;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.82);
+    border-radius: 15px;
+}
+
+.card-loading-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    text-align: center;
+}
+
+.card-loading-spinner {
+    width: 42px;
+    height: 42px;
+    border: 4px solid rgba(0, 0, 0, 0.14);
+    border-top-color: rgba(0, 0, 0, 0.72);
     border-radius: 50%;
-    line-height: 1;
-    transition: background-color 0.2s, transform 0.1s;
+    animation: card-loading-spin 0.8s linear infinite;
 }
 
-.audio-btn:hover {
-    background-color: rgba(0, 0, 0, 0.08);
+.card-loading-text {
+    color: #000000;
+    font-size: 1.1rem;
+    font-weight: 700;
 }
 
-button.audio-btn:hover {
-    transform: scale(1.1);
-}
-
-.sentence-text {
-    font-size: 2rem;
-    font-weight: 600;
-    color: var(--text-primary);
-    font-style: normal;
-    max-width: 80%;
-    line-height: 1.5;
+@keyframes card-loading-spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 /* ==========================================================================
@@ -393,12 +472,12 @@ button.audio-btn:hover {
     position: fixed;
     bottom: 0;
     left: 0;
-    width: 100%;
-    height: 100vh;
+    z-index: 1;
     display: flex;
     justify-content: space-evenly;
     align-items: flex-end;
-    z-index: 1;
+    width: 100%;
+    height: 100vh;
     pointer-events: none;
 }
 
@@ -406,8 +485,8 @@ button.audio-btn:hover {
     width: 12%;
     height: 0;
     background-color: var(--accent-color);
-    opacity: 0.2;
     border-radius: 15px 15px 0 0;
+    opacity: 0.2;
     transition: height 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
@@ -423,47 +502,58 @@ button.audio-btn:hover {
 .rating-distribution-container {
     width: 100%;
     max-width: 600px;
+    height: 16px;
     margin: 0 auto;
+    overflow: hidden;
     background: var(--bg-card, #e0e0e0);
     border-radius: 10px;
-    overflow: hidden;
-    height: 16px;
 }
 
 .rating-distribution-bar {
     display: flex;
-    height: 100%;
     width: 100%;
+    height: 100%;
 }
 
 .rating-distribution-segment {
+    width: 0%;
     height: 100%;
     transition: width 0.4s ease;
-    width: 0%;
 }
 
-.segment-again { background: #e74c3c; }
-.segment-hard  { background: #f39c12; }
-.segment-good  { background: #2ecc71; }
-.segment-easy  { background: #3498db; }
+.segment-again {
+    background: #e74c3c;
+}
+
+.segment-hard {
+    background: #f39c12;
+}
+
+.segment-good {
+    background: #2ecc71;
+}
+
+.segment-easy {
+    background: #3498db;
+}
 
 .rating-distribution-text {
-    text-align: center;
     margin-top: 10px;
-    font-size: 13px;
     color: var(--text-main, #333);
+    font-size: 13px;
+    text-align: center;
 }
 
 .distribution-hover-tooltip {
     position: fixed;
     z-index: 2200;
     min-width: 150px;
+    padding: 8px 10px;
     background: var(--bg-card, #fff);
-    color: var(--text-main, #222);
     border: 1px solid rgba(0, 0, 0, 0.12);
     border-radius: 8px;
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
-    padding: 8px 10px;
+    color: var(--text-main, #222);
     font-size: 0.78rem;
     pointer-events: none;
     opacity: 0;
@@ -477,8 +567,8 @@ button.audio-btn:hover {
 }
 
 .distribution-tooltip-title {
-    font-weight: 700;
     margin-bottom: 6px;
+    font-weight: 700;
 }
 
 .distribution-tooltip-row {
@@ -493,44 +583,58 @@ button.audio-btn:hover {
 }
 
 .distribution-tooltip-dot {
+    flex: 0 0 8px;
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    flex: 0 0 8px;
 }
 
-.distribution-tooltip-dot.dot-again { background: #e74c3c; }
-.distribution-tooltip-dot.dot-hard  { background: #f39c12; }
-.distribution-tooltip-dot.dot-good  { background: #2ecc71; }
-.distribution-tooltip-dot.dot-easy  { background: #3498db; }
+.distribution-tooltip-dot.dot-again {
+    background: #e74c3c;
+}
 
+.distribution-tooltip-dot.dot-hard {
+    background: #f39c12;
+}
+
+.distribution-tooltip-dot.dot-good {
+    background: #2ecc71;
+}
+
+.distribution-tooltip-dot.dot-easy {
+    background: #3498db;
+}
+
+/* ==========================================================================
+   MODAL
+   ========================================================================== */
 .modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.6); /* Dims the screen */
+    z-index: 2000;
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 2000;
-    backdrop-filter: blur(4px); /* Modern blur effect */
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
 }
 
 .modal-content {
-    flex-direction: column;
     min-width: 300px;
     max-width: 450px;
     padding: 24px !important;
     text-align: center;
+    flex-direction: column;
 }
 
 .modal-actions {
     display: flex;
     gap: 15px;
-    margin-top: 20px;
     width: 100%;
+    margin-top: 20px;
 }
 
 .modal-actions button {
@@ -549,6 +653,28 @@ button.audio-btn:hover {
 
     .large-text {
         font-size: 1.8rem;
+    }
+
+    .gloss-text {
+        max-width: 92%;
+        font-size: 1.3rem;
+    }
+
+    .sentence-row {
+        max-width: 92%;
+    }
+
+    .sentence-text {
+        font-size: 1.5rem;
+    }
+
+    .translation-text {
+        max-width: 92%;
+        font-size: 1.4rem;
+    }
+
+    .card-divider {
+        width: 88%;
     }
 
     .card-btn {
@@ -577,9 +703,9 @@ button.audio-btn:hover {
     }
 
     .sim-time-display {
-        min-width: 0;
         width: 100%;
         max-width: 320px;
+        min-width: 0;
         font-size: 0.9rem;
     }
 
