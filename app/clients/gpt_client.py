@@ -22,6 +22,7 @@ class GPTClient:
     """Thin transport wrapper for OpenAI text generation."""
 
     DEFAULT_MODEL = "gpt-5.4-nano"
+    DEFAULT_TEMPERATURE = 0
 
     def __init__(self, username: str) -> None:
         self.username = username
@@ -37,6 +38,9 @@ class GPTClient:
         prompt: str,
         system_prompt: str | None = None,
         model: str | None = None,
+        text_format: dict | None = None,
+        temperature: float | None = DEFAULT_TEMPERATURE,
+        max_output_tokens: int | None = None,
     ) -> str:
         """
         Send a prompt to the configured model and return the text output.
@@ -58,10 +62,19 @@ class GPTClient:
         })
 
         try:
-            response = self.client.responses.create(
-                model=model or self.DEFAULT_MODEL,
-                input=input_parts,
-            )
+            request_args = {
+                "model": model or self.DEFAULT_MODEL,
+                "input": input_parts,
+            }
+
+            if text_format is not None:
+                request_args["text"] = {"format": text_format}
+            if temperature is not None:
+                request_args["temperature"] = temperature
+            if max_output_tokens is not None:
+                request_args["max_output_tokens"] = max_output_tokens
+
+            response = self.client.responses.create(**request_args)
             return response.output_text
         except Exception as e:
             raise RuntimeError(f"OpenAI text generation failed: {e}") from e
