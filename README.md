@@ -1,45 +1,31 @@
-# AI-Enhanced Spaced Repetition Language Learning App
-
-An AI-powered language learning web application that combines a proven spaced repetition system (SM-2, used by Anki) with dynamic, context-rich sentence generation using large language models.
-
----
-
-## 📌 Overview
-
-Traditional spaced repetition systems (SRS), such as Anki, are highly effective but often rely on static, user-created flashcards. These can:
-
-- Be time-consuming to build and maintain  
-- Encourage context dependency (learning a word only in one fixed sentence)  
-- Require significant manual deck management  
-- Be intimidating for beginners  
-
-This project addresses those issues by integrating AI-driven content generation on top of an open-source SRS scheduler. Instead of reviewing static flashcards, learners receive dynamically generated sentence cards tailored to their current vocabulary level.
+# **Aisei**
+This repository contains the source code for Aisei, an AI-powered language learning application designed to streamline vocabulary acquisition through dynamic content generation.
 
 ---
 
-## 🎯 Problem Statement
+## **About**
+Traditional Spaced Repetition Systems (SRS), such as Anki, are highly effective but often rely on static, user-created flashcards. These systems present several inherent challenges:
 
-Many language learners quit because:
+- **Maintenance Overhead:** Creating and managing decks is time-consuming and often becomes a barrier to consistent study.
 
-- Building and managing decks is tedious  
-- Static flashcards lack meaningful, varied context  
-- Vocabulary learned in one sentence does not transfer well  
-- There is limited listening comprehension integration  
+- **Context Dependency:** Learning a word within a single, fixed sentence can lead to "sentence memorization" rather than genuine vocabulary mastery.
 
-We aim to reduce friction, improve contextual understanding, and automate content creation while preserving the scientifically validated benefits of spaced repetition.
+- **Manual Management:** Users must manually prune and update decks to keep them relevant to their current proficiency level.
+
+- **Accessibility:** The complexity of managing these systems can be intimidating for newcomers to language learning.
+
+Aisei addresses these issues by integrating AI-driven content generation on top of the SM-2 open-source SRS scheduler. Instead of reviewing static flashcards, learners receive dynamically generated sentence cards tailored specifically to their current vocabulary level.
 
 ---
 
-## 🚀 Solution
+## **Technical Features**
+Aisei automates the content pipeline while preserving the scientifically validated benefits of spaced repetition:
 
-Our application:
+**Dynamic Review Engine**
+The application utilizes OpenAI to generate a unique sentence for every review session. This ensures learners encounter vocabulary in diverse contexts, effectively breaking context dependency.
 
-1. Uses an open-source implementation of the **Anki SM-2 spaced repetition algorithm**
-2. Integrates an **LLM (via OpenAI API)** to generate contextual sentence-based flashcards
-3. Constrains generated content to:
-   - Vocabulary the learner has already unlocked
-   - At most one new concept per card
-4. Regenerates sentences during future reviews to prevent context dependency
-5. Integrates **text-to-speech (TTS)** for listening comprehension
+**Integrated Text-to-Speech (TTS)**
+Native ElevenLabs TTS integration provides immediate audio for every generated sentence, facilitating listening comprehension alongside reading practice.
 
-Instead of reviewing the same sentence repeatedly, learners encounter vocabulary in new, controlled contexts.
+**SM-2 Implementation**
+The core scheduling logic utilizes the SM-2 algorithm to calculate optimal review intervals and maximize long-term retention.
