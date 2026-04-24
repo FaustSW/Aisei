@@ -406,7 +406,7 @@ def ensure_generated_card_for_review_state(
     return generated_card
 
 
-def handle_audio_generation(username: str, text: str, voice_id: str | None):
+def handle_audio_generation(username: str, text: str, voice_id: str | None, playback_speed: float | None):
     """
     Coordinates between application logic and the ElevenLabs transport layer.
     """
@@ -426,7 +426,8 @@ def handle_audio_generation(username: str, text: str, voice_id: str | None):
             text=text,
             output_path=output_dir,
             filename=filename,
-            voice_id=voice_id
+            voice_id=voice_id,
+            voice_speed=playback_speed
         )
 
     _retry_with_backoff(

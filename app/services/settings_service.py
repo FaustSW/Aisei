@@ -126,3 +126,40 @@ def update_tts_voice_id(user_id: int, voice_id: str, db_session=None) -> UserSet
     finally:
         if owns_session:
             db.close()
+
+MIN_VOICE_SPEED = 0.7
+MAX_VOICE_SPEED = 1.2
+DEFAULT_VOICE_SPEED = 1.0
+
+
+def validate_tts_voice_speed(speed: float) -> float:
+    """Clamp and validate a voice speed value to the allowed range."""
+    try:
+        speed = float(speed)
+    except (TypeError, ValueError):
+        return DEFAULT_VOICE_SPEED
+
+    if not (MIN_VOICE_SPEED <= speed <= MAX_VOICE_SPEED):
+        raise ValueError(
+            f"voice_speed must be between {MIN_VOICE_SPEED} and {MAX_VOICE_SPEED}"
+        )
+
+    return round(speed, 2)
+
+def update_tts_voice_speed(user_id: int, speed: float, db_session=None) -> UserSettings:
+    """
+    Persist a new TTS playback speed for the user and return updated settings.
+    """
+    owns_session = db_session is None
+    db = db_session or get_session()
+
+    try:
+        settings = get_or_create_user_settings(user_id, db_session=db)
+        settings.tts_voice_speed = validate_tts_voice_speed(speed)
+        db.add(settings)
+        db.commit()
+        db.refresh(settings)
+        return settings
+    finally:
+        if owns_session:
+            db.close()

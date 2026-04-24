@@ -24,6 +24,7 @@ from app.services.settings_service import (
     update_daily_new_limit,
     get_tts_voice_id,
     update_tts_voice_id,
+    update_tts_voice_speed
 )
 
 settings_bp = Blueprint('themes', __name__)
@@ -194,4 +195,34 @@ def save_voice():
     return jsonify({
         "ok": True,
         "voice_id": settings.tts_voice_id,
+    })
+
+@settings_bp.route("/change_voice_speed", methods=["POST"])
+def change_voice_speed():
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Not logged in"}), 401
+
+    data = request.get_json(force=True)
+    raw_speed = data.get("voice_speed")
+
+    if raw_speed is None:
+        return jsonify({"error": "voice_speed is required"}), 400
+
+    try:
+        speed = float(raw_speed)
+    except (TypeError, ValueError):
+        return jsonify({"error": "voice_speed must be a number"}), 400
+
+    if not (0.7 <= speed <= 1.2):
+        return jsonify({"error": "voice_speed must be between 0.7 and 1.2"}), 400
+
+    try:
+        settings = update_tts_voice_speed(user_id, speed)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+
+    return jsonify({
+        "ok": True,
+        "voice_speed": settings.tts_voice_speed,
     })

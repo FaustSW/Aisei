@@ -14,6 +14,10 @@ document.addEventListener('DOMContentLoaded', function() {
         loadSavedAPIKeys(); 
     }
 
+    if (document.getElementById('voice-speed-slider')) {
+        initVoiceSpeedSlider();
+    }
+
     setupModalLogic();
 });
 
@@ -251,3 +255,48 @@ function loadSavedAPIKeys() {
         })
         .catch(err => console.error('Error loading API key status:', err));
 }
+
+// ==============================================================================================================
+// VOICE SPEED LOGIC
+// ==============================================================================================================
+
+function initVoiceSpeedSlider() {
+    const slider = document.getElementById('voice-speed-slider');
+    const label  = document.getElementById('voice-speed-label');
+    if (!slider) return;
+
+    // Restore from localStorage, fall back to server-supplied initial value
+    const saved = localStorage.getItem('voiceSpeed');
+    const initial = (saved !== null) ? parseFloat(saved) : (window.INITIAL_VOICE_SPEED ?? 1.0);
+    slider.value = initial;
+    if (label) label.textContent = parseFloat(initial).toFixed(2) + '×';
+
+    slider.addEventListener('input', () => {
+        if (label) label.textContent = parseFloat(slider.value).toFixed(2) + '×';
+    });
+
+    slider.addEventListener('change', saveVoiceSpeed);
+}
+
+function saveVoiceSpeed() {
+    const slider = document.getElementById('voice-speed-slider');
+    if (!slider) return;
+
+    const speed = parseFloat(slider.value);
+
+    fetch('/settings/change_voice_speed', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ voice_speed: speed })
+    })
+        .then(res => res.json())
+        .then(data => {
+            if (data.ok) {
+                localStorage.setItem('voiceSpeed', data.voice_speed);
+            } else {
+                console.error('Error saving voice speed:', data.error);
+            }
+        })
+        .catch(err => console.error('Error saving voice speed:', err));
+}
+

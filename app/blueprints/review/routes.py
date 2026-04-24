@@ -115,6 +115,7 @@ def generate_audio():
     data = request.get_json(force=True)
     text = data.get("text")
     voice_id = data.get("voice_id")
+    voice_speed = data.get("voice_speed") 
 
     if not text:
         return jsonify({"error": "No text provided"}), 400
@@ -127,7 +128,8 @@ def generate_audio():
         audio_url = handle_audio_generation(
             username=username,
             text=text,
-            voice_id=voice_id
+            voice_id=voice_id,
+            playback_speed=voice_speed 
         )
 
         return jsonify({

@@ -120,50 +120,54 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function speakWithElevenLabs(text, voiceId) {
-        if (!text || !text.trim()) return;
+    if (!text || !text.trim()) return;
 
-        const requestToken = ++audioRequestToken;
+    const requestToken = ++audioRequestToken;
 
-        try {
-            if (currentAudio) {
-                currentAudio.pause();
-                currentAudio.currentTime = 0;
-                currentAudio = null;
-            }
+    try {
+        if (currentAudio) {
+            currentAudio.pause();
+            currentAudio.currentTime = 0;
+            currentAudio = null;
+        }
 
-            const response = await fetch('/review/generate_audio', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    text: text.trim(),
-                    voice_id: voiceId
-                })
+        const savedSpeed = localStorage.getItem('voiceSpeed');
+        const voiceSpeed = savedSpeed !== null ? parseFloat(savedSpeed) : 1.0;
+
+        const response = await fetch('/review/generate_audio', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                text: text.trim(),
+                voice_id: voiceId,
+                voice_speed: voiceSpeed
+            })
+        });
+
+        const data = await response.json();
+
+        if (requestToken !== audioRequestToken) {
+            return;
+        }
+
+        if (data.success && data.audio_url) {
+            const audio = new Audio(data.audio_url);
+            currentAudio = audio;
+
+            audio.addEventListener('ended', () => {
+                if (currentAudio === audio) {
+                    currentAudio = null;
+                }
             });
 
-            const data = await response.json();
-
-            if (requestToken !== audioRequestToken) {
-                return;
-            }
-
-            if (data.success && data.audio_url) {
-                const audio = new Audio(data.audio_url);
-                currentAudio = audio;
-
-                audio.addEventListener('ended', () => {
-                    if (currentAudio === audio) {
-                        currentAudio = null;
-                    }
-                });
-
-                await audio.play();
-            } else {
-                console.error('ElevenLabs Error:', data.error);
-            }
-        } catch (err) {
-            console.error('Failed to communicate with audio service:', err);
+            await audio.play();
+        } else {
+            console.error('ElevenLabs Error:', data.error);
         }
+    } catch (err) {
+        console.error('Failed to communicate with audio service:', err);
     }
+}
 
     function getSelectedVoiceId() {
         const savedVoice = localStorage.getItem('selectedVoice');
