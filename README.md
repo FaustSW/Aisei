@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="img/banner.png" alt="Aisei Banner" width="100%">
+  <img src="img/banner.jpg" alt="Aisei Banner" style="max-width: 100%; height: auto;">
 </p>
 
 # **Aisei**
