@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="img/banner.jpg" alt="Aisei Banner" width="100%">
+</p>
+
 # **Aisei**
 This repository contains the source code for Aisei, an AI-powered language learning application designed to streamline vocabulary acquisition through dynamic content generation.
 
