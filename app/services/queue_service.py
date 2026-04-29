@@ -107,7 +107,10 @@ def is_due_on_or_before_today(review_state: ReviewState, today_date) -> bool:
 
 def sort_new_cards_by_curriculum(db_session, review_states: list[ReviewState]) -> list[ReviewState]:
     """
-    Return new-card ReviewStates sorted by vocab.intro_index, then ReviewState id.
+    Return new-card ReviewStates in introduction order.
+
+    Manual cards come first, ordered by Vocab.created_at. Seed cards then follow
+    the fixed curriculum order from Vocab.intro_index.
     """
     vocab_ids = [rs.vocab_id for rs in review_states]
     vocab_map = {
@@ -119,8 +122,14 @@ def sort_new_cards_by_curriculum(db_session, review_states: list[ReviewState]) -
 
     def new_sort_key(rs: ReviewState):
         vocab = vocab_map.get(rs.vocab_id)
+        is_manual = bool(vocab and vocab.source == "manual")
+        created_at = as_utc(vocab.created_at) if vocab else None
         intro_index = vocab.intro_index if vocab and vocab.intro_index is not None else 10**9
-        return (intro_index, rs.id)
+
+        if is_manual:
+            return (0, created_at or datetime.max.replace(tzinfo=timezone.utc), rs.id)
+
+        return (1, intro_index, rs.id)
 
     return sorted(review_states, key=new_sort_key)
 

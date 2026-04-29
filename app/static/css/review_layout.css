@@ -69,3 +69,61 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
     width: fit-content;
 }
+
+.btn-add-vocab {
+    background: var(--primary-gradient, linear-gradient(135deg, #667eea, #764ba2));
+    color: white;
+}
+
+.manual-vocab-modal-content {
+    text-align: left;
+}
+
+.manual-vocab-help {
+    margin: 0 0 18px;
+    color: #555;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    text-align: center;
+}
+
+.manual-vocab-modal-content .form-group {
+    margin-bottom: 14px;
+}
+
+.manual-vocab-modal-content label {
+    display: block;
+    margin-bottom: 6px;
+    color: #444;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.manual-vocab-modal-content input {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #cfcfcf;
+    border-radius: 7px;
+    font-size: 0.95rem;
+    font-family: inherit;
+}
+
+.manual-vocab-message {
+    margin-top: 8px;
+    padding: 10px 12px;
+    border-radius: 7px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-align: center;
+}
+
+.manual-vocab-error {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.manual-vocab-success {
+    background: #d4edda;
+    color: #155724;
+}

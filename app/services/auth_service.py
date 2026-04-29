@@ -141,33 +141,33 @@ def delete_user(user_id: int) -> None:
         if user is None:
             raise ValueError("User not found")
 
-        states = db.exec(
-            select(ReviewState).where(ReviewState.user_id == user_id)
-        ).all()
+        states = db.exec(select(ReviewState).where(ReviewState.user_id == user_id)).all()
         
         # Collect ReviewState IDs first so GeneratedCard rows can be deleted
         # before their parent ReviewState rows are removed.
         state_ids = [rs.id for rs in states if rs.id is not None]
 
-        logs = db.exec(
-            select(ReviewLog).where(ReviewLog.user_id == user_id)
-        ).all()
+        logs = db.exec(select(ReviewLog).where(ReviewLog.user_id == user_id)).all()
         for log in logs:
             db.delete(log)
 
         if state_ids:
-            generated_cards = db.exec(
-                select(GeneratedCard).where(GeneratedCard.review_state_id.in_(state_ids))
-            ).all()
+            generated_cards = db.exec(select(GeneratedCard).where(GeneratedCard.review_state_id.in_(state_ids))).all()
             for generated_card in generated_cards:
                 db.delete(generated_card)
 
         for rs in states:
             db.delete(rs)
 
-        user_settings = db.exec(
-            select(UserSettings).where(UserSettings.user_id == user_id)
-        ).first()
+        manual_vocabs = db.exec(
+            select(Vocab)
+            .where(Vocab.user_id == user_id)
+            .where(Vocab.source == "manual")
+        ).all()
+        for vocab in manual_vocabs:
+            db.delete(vocab)
+
+        user_settings = db.exec(select(UserSettings).where(UserSettings.user_id == user_id)).first()
         if user_settings is not None:
             db.delete(user_settings)
 
@@ -179,7 +179,7 @@ def delete_user(user_id: int) -> None:
 
 def _seed_review_states(db, user_id: int) -> None:
     """Create a ReviewState for every vocab item for this new user."""
-    vocabs = db.exec(select(Vocab)).all()
+    vocabs = db.exec(select(Vocab).where(Vocab.source == "seed")).all()
     for vocab in vocabs:
         rs = ReviewState(user_id=user_id, vocab_id=vocab.id)
         _scheduler.initialize_new_card(rs)

@@ -19,6 +19,7 @@
 
 <div class="stats">
     <button type="button" id="sign-out-btn" class="stat-btn btn-logout">Sign Out</button>
+    <button type="button" id="add-vocab-btn" class="stat-btn btn-add-vocab">Add Vocab</button>
     <a href="{{ url_for('stats.stats') }}" class="stat-btn btn-stats">Stats</a>
 </div>
 
@@ -215,12 +216,52 @@
     </div>
 </div>
 
+<div id="manual-vocab-modal" class="modal-overlay is-hidden">
+    <div class="modal-content glass-panel manual-vocab-modal-content">
+        <h2>Add Manual Vocab</h2>
+        <p class="manual-vocab-help">
+            Enter a Spanish vocab item. Meaning, sentence, and sentence translation are optional.
+            Missing fields will be generated.
+        </p>
+
+        <form id="manual-vocab-form">
+            <div class="form-group">
+                <label for="manual-vocab-term">Spanish vocab item</label>
+                <input type="text" id="manual-vocab-term">
+            </div>
+
+            <div class="form-group">
+                <label for="manual-vocab-gloss">English meaning / translation (optional)</label>
+                <input type="text" id="manual-vocab-gloss">
+            </div>
+
+            <div class="form-group">
+                <label for="manual-vocab-sentence">Spanish sentence (optional)</label>
+                <input type="text" id="manual-vocab-sentence">
+            </div>
+
+            <div class="form-group">
+                <label for="manual-vocab-translation">Sentence translation (optional)</label>
+                <input type="text" id="manual-vocab-translation">
+            </div>
+
+            <div id="manual-vocab-message" class="manual-vocab-message is-hidden"></div>
+
+            <div class="modal-actions">
+                <button type="button" id="manual-vocab-cancel" class="glass-button btn-cancel">Cancel</button>
+                <button type="submit" id="manual-vocab-submit" class="glass-button btn-create">Add Card</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block extra_js %}
 <script>
     // These URLs must match BlueprintName.FunctionName
     const RATE_URL = "{{ url_for('review.rate_card') }}";
+    const ADD_MANUAL_VOCAB_URL = "{{ url_for('review.add_manual_vocab') }}";
     const SET_DAILY_NEW_LIMIT_URL = "{{ url_for('themes.set_daily_new_limit') }}";
     
     // Core state data

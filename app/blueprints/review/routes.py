@@ -26,6 +26,7 @@ from app.services.settings_service import (
 )
 from app.services.stats_service import get_session_stats
 from app.services.generation_service import handle_audio_generation
+from app.services.manual_vocab_service import create_manual_vocab_card
 
 
 review_bp = Blueprint("review", __name__, template_folder="templates")
@@ -99,6 +100,39 @@ def rate_card():
     })
 
 
+@review_bp.route("/add_manual_vocab", methods=["POST"])
+def add_manual_vocab():
+    """Create a manually entered vocab card and refresh today's queue."""
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Not logged in"}), 401
+
+    data = request.get_json(force=True)
+
+    try:
+        result = create_manual_vocab_card(
+            user_id=user_id,
+            term=data.get("term", ""),
+            english_gloss=data.get("english_gloss", ""),
+            sentence=data.get("sentence", ""),
+            translation=data.get("translation", ""),
+        )
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+    next_card = get_next_card(user_id)
+    stats = get_session_stats(user_id)
+
+    return jsonify({
+        "ok": True,
+        "manual_card": result,
+        "next_card": next_card,
+        "stats": stats,
+    })
+
+
 # Currently testing ElevenLabs integration through a dedicated route
 # This should run when the audio button in the card area is pressed
 @review_bp.route("/generate_audio", methods=["POST"])
@@ -116,9 +150,6 @@ def generate_audio():
         return jsonify({"error": "No text provided"}), 400
 
     try:
-        # Link to your Generation Service
-        from app.services.generation_service import handle_audio_generation
-        
         # This function (built in previous step) triggers the ElevenLabsClient
         audio_url = handle_audio_generation(
             username=username,

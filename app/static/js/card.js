@@ -12,6 +12,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const buttons = document.querySelectorAll('.card-btn');
     const ratingButtonRow = document.getElementById('rating-button-row');
 
+    // manual vocab input
+    const addVocabBtn = document.getElementById('add-vocab-btn');
+    const manualVocabModal = document.getElementById('manual-vocab-modal');
+    const manualVocabForm = document.getElementById('manual-vocab-form');
+    const manualVocabCancel = document.getElementById('manual-vocab-cancel');
+    const manualVocabSubmit = document.getElementById('manual-vocab-submit');
+    const manualVocabMessage = document.getElementById('manual-vocab-message');
+    const manualVocabTerm = document.getElementById('manual-vocab-term');
+    const manualVocabGloss = document.getElementById('manual-vocab-gloss');
+    const manualVocabSentence = document.getElementById('manual-vocab-sentence');
+    const manualVocabTranslation = document.getElementById('manual-vocab-translation');
+
     const dailyNewLimitInput = document.getElementById('daily-new-limit-input');
     const dailyNewLimitApplyBtn = document.getElementById('daily-new-limit-apply');
 
@@ -474,6 +486,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     window.addEventListener('keydown', (e) => {
+        const target = e.target;
+
+        const isTyping =
+            target instanceof HTMLInputElement ||
+            target instanceof HTMLTextAreaElement ||
+            target instanceof HTMLSelectElement ||
+            target?.isContentEditable;
+
+        const manualModalOpen =
+            manualVocabModal && !manualVocabModal.classList.contains('is-hidden');
+
+        if (isTyping || manualModalOpen) {
+            return;
+        }
+
         if (e.code === 'Space') {
             e.preventDefault();
             flipCard();
@@ -605,10 +632,101 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+
+    function setManualVocabMessage(message, isError = false) {
+        if (!manualVocabMessage) return;
+
+        manualVocabMessage.textContent = message || "";
+        manualVocabMessage.classList.toggle('is-hidden', !message);
+        manualVocabMessage.classList.toggle('manual-vocab-error', isError);
+        manualVocabMessage.classList.toggle('manual-vocab-success', !isError && !!message);
+    }
+
+    function openManualVocabModal() {
+        if (!manualVocabModal) return;
+
+        setManualVocabMessage("");
+        manualVocabModal.classList.remove('is-hidden');
+
+        if (manualVocabTerm) {
+            manualVocabTerm.focus();
+        }
+    }
+
+    function closeManualVocabModal() {
+        if (!manualVocabModal) return;
+
+        manualVocabModal.classList.add('is-hidden');
+        if (manualVocabForm) {
+            manualVocabForm.reset();
+        }
+        setManualVocabMessage("");
+    }
+
+    if (addVocabBtn) {
+        addVocabBtn.addEventListener('click', openManualVocabModal);
+    }
+
+    if (manualVocabCancel) {
+        manualVocabCancel.addEventListener('click', closeManualVocabModal);
+    }
+
+    if (manualVocabForm) {
+        manualVocabForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const term = manualVocabTerm?.value.trim() || "";
+            if (!term) {
+                setManualVocabMessage("Spanish vocab item is required.", true);
+                return;
+            }
+
+            if (manualVocabSubmit) {
+                manualVocabSubmit.disabled = true;
+                manualVocabSubmit.textContent = "Adding...";
+            }
+            setManualVocabMessage("Creating card. Missing fields may take a moment to generate.");
+
+            try {
+                const response = await fetch(ADD_MANUAL_VOCAB_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        term,
+                        english_gloss: manualVocabGloss?.value.trim() || "",
+                        sentence: manualVocabSentence?.value.trim() || "",
+                        translation: manualVocabTranslation?.value.trim() || "",
+                    }),
+                });
+
+                const data = await response.json();
+
+                if (!response.ok || data.error) {
+                    setManualVocabMessage(data.error || "Failed to add vocab item.", true);
+                    return;
+                }
+
+                setManualVocabMessage("Card added. Refreshing queue.");
+                window.location.reload();
+            } catch (err) {
+                console.error('Manual vocab request failed:', err);
+                setManualVocabMessage("Request failed. Check the console for details.", true);
+            } finally {
+                if (manualVocabSubmit) {
+                    manualVocabSubmit.disabled = false;
+                    manualVocabSubmit.textContent = "Add Card";
+                }
+            }
+        });
+    }
+
     // Close modal if clicking the background overlay
     window.addEventListener('click', (e) => {
         if (e.target === logoutModal) {
             logoutModal.classList.add('is-hidden');
+        }
+        if (e.target === manualVocabModal) {
+            closeManualVocabModal();
         }
     });
 

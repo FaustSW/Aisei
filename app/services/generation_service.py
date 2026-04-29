@@ -405,6 +405,133 @@ Output only JSON with "sentence" and "translation".
             ) from relaxed_error
 
 
+MANUAL_CARD_CONTENT_SCHEMA = {
+    "type": "json_schema",
+    "name": "manual_flashcard_card_content",
+    "strict": True,
+    "schema": {
+        "type": "object",
+        "properties": {
+            "english_gloss": {
+                "type": "string",
+                "description": "A short English meaning for the target Spanish term.",
+            },
+            "sentence": {
+                "type": "string",
+                "description": "One beginner-friendly Spanish sentence using the target term.",
+            },
+            "translation": {
+                "type": "string",
+                "description": "A natural English translation of the Spanish sentence.",
+            },
+        },
+        "required": ["english_gloss", "sentence", "translation"],
+        "additionalProperties": False,
+    },
+}
+
+
+def generate_manual_card_content(
+    username: str,
+    term: str,
+    english_gloss: str | None = None,
+    sentence: str | None = None,
+    translation: str | None = None,
+    model: str = DEFAULT_GENERATION_MODEL,
+) -> dict:
+    """
+    Complete manual vocab input by generating any missing display fields.
+    """
+    term = str(term or "").strip()
+    english_gloss = str(english_gloss or "").strip()
+    sentence = str(sentence or "").strip()
+    translation = str(translation or "").strip()
+
+    if not term:
+        raise ValueError("Vocab term is required")
+
+    if english_gloss and sentence and translation:
+        validated = _validate_basic_card_content(
+            data={"sentence": sentence, "translation": translation},
+            term=term,
+        )
+        return {
+            "english_gloss": re.sub(r"\s+", " ", english_gloss).strip(),
+            "sentence": validated["sentence"],
+            "translation": validated["translation"],
+        }
+
+    client = GPTClient(username)
+
+    system_prompt = """
+You complete manually entered Spanish flashcard content for a beginner learner.
+
+Return one JSON object that matches the provided schema exactly.
+
+Rules:
+- Preserve any user-provided field content unless it is only whitespace.
+- If the user provides text, preserve it exactly.
+- english_gloss must be a short English meaning of the target Spanish term.
+- sentence must be exactly one simple Spanish sentence using the target term.
+- translation must be a natural English translation of the Spanish sentence.
+- Keep the sentence beginner-friendly and between 4 and 10 words when possible.
+- Avoid commentary, markdown, lists, questions, and exclamation marks.
+""".strip()
+
+    user_prompt = f"""
+Target Spanish vocab term: {term}
+
+User-provided English gloss or meaning:
+{english_gloss or "[missing]"}
+
+User-provided Spanish example sentence:
+{sentence or "[missing]"}
+
+User-provided English sentence translation:
+{translation or "[missing]"}
+
+Fill in every missing field. If a sentence is provided but translation is missing,
+translate the provided sentence. If a gloss is provided but sentence is missing,
+use the gloss to create a natural beginner sentence.
+
+Output only JSON with:
+- english_gloss
+- sentence
+- translation
+""".strip()
+
+    def _attempt_manual_generation() -> dict:
+        raw_text = client.generate_text(
+            prompt=user_prompt,
+            system_prompt=system_prompt,
+            model=model,
+            text_format=MANUAL_CARD_CONTENT_SCHEMA,
+            temperature=GENERATION_TEMPERATURE,
+            max_output_tokens=GENERATION_MAX_OUTPUT_TOKENS,
+        )
+
+        data = _extract_json_object(raw_text)
+
+        completed_gloss = str(data.get("english_gloss") or "").strip()
+        if not completed_gloss:
+            raise ValueError(f"Generated English gloss was empty for term {term!r}")
+
+        validated = _validate_basic_card_content(data=data, term=term)
+
+        return {
+            "english_gloss": re.sub(r"\s+", " ", completed_gloss).strip(),
+            "sentence": validated["sentence"],
+            "translation": validated["translation"],
+        }
+
+    return _retry_with_backoff(
+        operation_name=f"manual card content completion for term {term!r}",
+        func=_attempt_manual_generation,
+        max_attempts=GENERATION_MAX_ATTEMPTS,
+        retry_delay_seconds=GENERATION_RETRY_DELAY_SECONDS,
+    )
+
+
 def should_regenerate(review_state: ReviewState) -> bool:
     """
     Return True if this card should be marked for regeneration.
