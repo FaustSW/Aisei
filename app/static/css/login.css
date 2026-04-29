@@ -399,11 +399,9 @@ button:hover {
 .modal-content {
     display: flex;
     flex-direction: column;
-    min-width: 320px;
-    max-width: 450px;
     padding: 24px;
     z-index: 10001; /* sits above the overlay */
-    background: var(--card-bg); /* Uses your theme colors */
+    background: var(--bg-main); /* Uses your theme colors */
     border-radius: 15px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.3);
 }
