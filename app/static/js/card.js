@@ -53,6 +53,8 @@ document.addEventListener('DOMContentLoaded', () => {
         good:  (initial.counts && initial.counts.good)  || 0,
         easy:  (initial.counts && initial.counts.easy)  || 0,
     };
+    // Maps the integer rating value sent to the server to its reviewCounts key
+    const ratingNames = { 1: 'again', 2: 'hard', 3: 'good', 4: 'easy' };
     let isFlipping = false;
     let currentAudio = null;
     let audioRequestToken = 0;
@@ -526,6 +528,13 @@ document.addEventListener('DOMContentLoaded', () => {
             showCardLoading();
 
             const rating = parseInt(btn.dataset.action, 10);
+
+            
+            const ratingKey = ratingNames[rating];
+            if (ratingKey) {
+                reviewCounts[ratingKey] = (reviewCounts[ratingKey] || 0) + 1;
+                updateRatingDistribution();
+            }
 
             fetch(RATE_URL, {
                 method: 'POST',

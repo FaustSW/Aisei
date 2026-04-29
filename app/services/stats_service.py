@@ -4,7 +4,7 @@ stats_service.py
 Computes user-facing progress metrics from ReviewLog and ReviewState data.
 
 Current responsibilities:
-- Count first ratings selected today per card (not every re-review)
+- Count all rating presses today (every difficulty selection, not just the most recent per card)
 - Count cards in New / Learning / Review buckets due today
 - Apply the user's daily new-card cap to the remaining available New count
 - Count unique cards reviewed today
@@ -56,9 +56,11 @@ def get_session_stats(user_id: int) -> dict:
     Returns:
         A dict containing:
             - total_reviewed: number of distinct cards first reviewed today
-            - counts: first-rating counts for again / hard / good / easy
-            - current_streak: current streak of first-review good/easy ratings
-            - max_streak: highest first-review good/easy streak reached today
+            - counts: cumulative counts for each rating (again/hard/good/easy);
+                       every rating press is counted, not just the most recent per card
+            - current_streak: current streak of good/easy ratings on the first
+                               review of each card today
+            - max_streak: highest such streak reached today
             - cards_due: number of cards due right now
             - new_cards: remaining new cards available today after applying the daily cap
             - learning_cards: learning cards due today
@@ -139,11 +141,13 @@ def get_session_stats(user_id: int) -> dict:
                 else:
                     current_streak = 0
 
-            # Always overwrite so only the most recent rating per card is counted
-            latest_ratings[review.review_state_id] = review.rating
+            # Track first rating per card (used for accuracy calculation only)
+            if review.review_state_id not in latest_ratings:
+                latest_ratings[review.review_state_id] = review.rating
 
-        for rating in latest_ratings.values():
-            name = rating_map.get(rating)
+            # Increment the count for every rating selected so the distribution
+            # bar reflects all difficulty choices, not just the last one per card
+            name = rating_map.get(review.rating)
             if name:
                 counts[name] += 1
 
@@ -334,27 +338,16 @@ def get_period_stats(user_id: int, period: str) -> dict:
             """Return e.g. 'Apr 5' from a datetime."""
             return f"{dt.strftime('%b')} {dt.day}"
 
-        # Deduplicate: keep only the last rating per (card, calendar day).
-        # window_logs is ordered by reviewed_at ascending, so later entries
-        # overwrite earlier ones, leaving the final outcome for each card-day.
-        last_rating_per_card_day: dict[tuple, int] = {}
-        for log in window_logs:
-            dt = as_utc(log.reviewed_at)
-            if dt:
-                key = (log.review_state_id, dt.date())
-                last_rating_per_card_day[key] = log.rating
-
         weeks = []
         for bucket_start, bucket_end in week_boundaries:
             # Last calendar day of the bucket (bucket_end is exclusive midnight)
             last_day = bucket_end - timedelta(days=1)
             bucket_label = f"{_fmt_day(bucket_start)} – {_fmt_day(last_day)}"
-            bucket_start_date = bucket_start.date()
-            bucket_end_date = bucket_end.date()
             counts = {"again": 0, "hard": 0, "good": 0, "easy": 0}
-            for (rs_id, log_date), rating in last_rating_per_card_day.items():
-                if bucket_start_date <= log_date < bucket_end_date:
-                    name = rating_map.get(rating)
+            for log in window_logs:
+                dt = as_utc(log.reviewed_at)
+                if dt and bucket_start <= dt < bucket_end:
+                    name = rating_map.get(log.rating)
                     if name:
                         counts[name] += 1
             weeks.append({"label": bucket_label, **counts})
