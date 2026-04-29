@@ -6,12 +6,18 @@ Owns AI-generated review content creation
 
 Current responsibilities:
 - Generate initial sentence/translation content for a vocab item.
+- Validate generated card content before saving it.
+- Retry strict generation when output fails validation or the API call fails.
+- Fall back to a relaxed generation pass if strict generation cannot produce usable content.
 - Create and persist a GeneratedCard for a ReviewState when needed.
 - Provide ElevenLabs audio generation for on-card playback.
 - Decide whether a card should be marked for regeneration.
 
-Later responsibilities:
-- Validation refinement / retry logic
+Generation behavior:
+- Normal generation uses structured JSON output plus stricter validation.
+- If all normal attempts fail, relaxed fallback generation runs once.
+- Relaxed fallback only requires basic usable structure: sentence + translation.
+- If both normal generation and relaxed fallback fail, the caller handles the failure.
 """
 
 from __future__ import annotations
@@ -34,6 +40,7 @@ DEFAULT_GENERATION_MODEL = "gpt-5.4-nano"
 GENERATION_MAX_ATTEMPTS = 3
 GENERATION_RETRY_DELAY_SECONDS = 0.75
 GENERATION_TEMPERATURE = 0
+RELAXED_GENERATION_TEMPERATURE = 0.4
 GENERATION_MAX_OUTPUT_TOKENS = 120
 AUDIO_MAX_ATTEMPTS = 3
 AUDIO_RETRY_DELAY_SECONDS = 0.5
@@ -177,6 +184,81 @@ def _count_words(text: str) -> int:
     return len(re.findall(r"\S+", text))
 
 
+def _validate_basic_card_content(data: dict, term: str) -> dict:
+    """
+    Validate only the minimum structure needed to display a generated card.
+    """
+    sentence = str(data.get("sentence", "")).strip()
+    translation = str(data.get("translation", "")).strip()
+
+    if not sentence:
+        raise ValueError(f"Generated sentence was empty for term {term!r}")
+
+    if not translation:
+        raise ValueError(f"Generated translation was empty for term {term!r}")
+
+    if "```" in sentence or "```" in translation:
+        raise ValueError("Generated content contained markdown/code fences")
+
+    sentence = re.sub(r"\s+", " ", sentence).strip()
+    translation = re.sub(r"\s+", " ", translation).strip()
+
+    return {
+        "sentence": sentence,
+        "translation": translation,
+    }
+
+
+def _validate_strict_card_content(
+    data: dict,
+    term: str,
+    prior_normalized_sentences: set[str],
+    prior_normalized_translations: set[str],
+) -> dict:
+    """
+    Validate generated card content against the normal strict generation rules.
+    """
+    allowed_keys = {"sentence", "translation"}
+    actual_keys = set(data.keys())
+    if actual_keys != allowed_keys:
+        raise ValueError(
+            f"Model returned unexpected keys. Expected {allowed_keys}, got {actual_keys}"
+        )
+
+    validated = _validate_basic_card_content(data, term)
+    sentence = validated["sentence"]
+    translation = validated["translation"]
+
+    if "\n" in sentence or "\n" in translation:
+        raise ValueError("Generated content must stay on one line")
+
+    sentence_word_count = _count_words(sentence)
+    if not MIN_SENTENCE_WORDS <= sentence_word_count <= MAX_SENTENCE_WORDS:
+        raise ValueError(
+            f"Generated sentence must contain {MIN_SENTENCE_WORDS}-"
+            f"{MAX_SENTENCE_WORDS} words, got {sentence_word_count}: {sentence!r}"
+        )
+
+    if sentence.count("?") or sentence.count("!") or translation.count("?") or translation.count("!"):
+        raise ValueError("Generated content must not include questions or exclamations")
+
+    normalized_new_sentence = _normalize_for_duplicate_check(sentence)
+    if normalized_new_sentence in prior_normalized_sentences:
+        raise ValueError(
+            "Generated sentence duplicated a previous version for term "
+            f"{term!r}: {sentence!r}"
+        )
+
+    normalized_new_translation = _normalize_for_duplicate_check(translation)
+    if normalized_new_translation in prior_normalized_translations:
+        raise ValueError(
+            "Generated translation duplicated a previous version for term "
+            f"{term!r}: {translation!r}"
+        )
+
+    return validated
+
+
 def generate_card_content_for_vocab(
     username: str,
     term: str,
@@ -230,6 +312,34 @@ Regeneration constraints:
 Output only the schema-matching JSON object.
 """.strip()
 
+    relaxed_system_prompt = """
+You generate Spanish flashcard content for a beginner language learner.
+
+Return one JSON object with exactly these fields:
+- sentence
+- translation
+
+The Spanish sentence should be simple, natural, and beginner-friendly.
+The English translation should clearly match the Spanish sentence.
+Do not include commentary or markdown.
+""".strip()
+
+    relaxed_user_prompt = f"""
+Target Spanish vocab term: {term}
+English gloss: {english_gloss}
+
+Generate a natural beginner-friendly Spanish example sentence using the target term,
+plus a direct English translation.
+
+Previous card versions for this vocab item:
+{prior_versions_block}
+
+Prefer a sentence that is different from previous versions, but prioritize producing
+a usable natural sentence.
+
+Output only JSON with "sentence" and "translation".
+""".strip()
+
     prior_normalized_sentences = {
         _normalize_for_duplicate_check(str(version.get("sentence") or ""))
         for version in prior_versions
@@ -241,7 +351,7 @@ Output only the schema-matching JSON object.
         if version.get("translation")
     }
 
-    def _attempt_generation() -> dict:
+    def _attempt_strict_generation() -> dict:
         raw_text = client.generate_text(
             prompt=user_prompt,
             system_prompt=system_prompt,
@@ -253,62 +363,46 @@ Output only the schema-matching JSON object.
 
         data = _extract_json_object(raw_text)
 
-        allowed_keys = {"sentence", "translation"}
-        actual_keys = set(data.keys())
-        if actual_keys != allowed_keys:
-            raise ValueError(
-                f"Model returned unexpected keys. Expected {allowed_keys}, got {actual_keys}"
-            )
+        return _validate_strict_card_content(
+            data=data,
+            term=term,
+            prior_normalized_sentences=prior_normalized_sentences,
+            prior_normalized_translations=prior_normalized_translations,
+        )
 
-        sentence = str(data.get("sentence", "")).strip()
-        translation = str(data.get("translation", "")).strip()
+    def _attempt_relaxed_generation() -> dict:
+        raw_text = client.generate_text(
+            prompt=relaxed_user_prompt,
+            system_prompt=relaxed_system_prompt,
+            model=model,
+            text_format=CARD_CONTENT_SCHEMA,
+            temperature=RELAXED_GENERATION_TEMPERATURE,
+            max_output_tokens=GENERATION_MAX_OUTPUT_TOKENS,
+        )
 
-        if not sentence:
-            raise ValueError(f"Generated sentence was empty for term {term!r}")
+        data = _extract_json_object(raw_text)
 
-        if not translation:
-            raise ValueError(f"Generated translation was empty for term {term!r}")
+        return _validate_basic_card_content(data=data, term=term)
 
-        if "```" in sentence or "```" in translation:
-            raise ValueError("Generated content contained markdown/code fences")
-        if "\n" in sentence or "\n" in translation:
-            raise ValueError("Generated content must stay on one line")
+    try:
+        return _retry_with_backoff(
+            operation_name=f"strict card content generation for term {term!r}",
+            func=_attempt_strict_generation,
+            max_attempts=GENERATION_MAX_ATTEMPTS,
+            retry_delay_seconds=GENERATION_RETRY_DELAY_SECONDS,
+        )
+    except RuntimeError as strict_error:
+        print(
+            f"[generation_service] strict generation failed for term {term!r}. "
+            f"Trying relaxed fallback. Last strict error: {strict_error}"
+        )
 
-        sentence_word_count = _count_words(sentence)
-        if not MIN_SENTENCE_WORDS <= sentence_word_count <= MAX_SENTENCE_WORDS:
-            raise ValueError(
-                f"Generated sentence must contain {MIN_SENTENCE_WORDS}-"
-                f"{MAX_SENTENCE_WORDS} words, got {sentence_word_count}: {sentence!r}"
-            )
-
-        if sentence.count("?") or sentence.count("!") or translation.count("?") or translation.count("!"):
-            raise ValueError("Generated content must not include questions or exclamations")
-
-        normalized_new_sentence = _normalize_for_duplicate_check(sentence)
-        if normalized_new_sentence in prior_normalized_sentences:
-            raise ValueError(
-                "Generated sentence duplicated a previous version for term "
-                f"{term!r}: {sentence!r}"
-            )
-
-        normalized_new_translation = _normalize_for_duplicate_check(translation)
-        if normalized_new_translation in prior_normalized_translations:
-            raise ValueError(
-                "Generated translation duplicated a previous version for term "
-                f"{term!r}: {translation!r}"
-            )
-
-        return {
-            "sentence": sentence,
-            "translation": translation,
-        }
-
-    return _retry_with_backoff(
-        operation_name=f"card content generation for term {term!r}",
-        func=_attempt_generation,
-        max_attempts=GENERATION_MAX_ATTEMPTS,
-        retry_delay_seconds=GENERATION_RETRY_DELAY_SECONDS,
-    )
+        try:
+            return _attempt_relaxed_generation()
+        except Exception as relaxed_error:
+            raise RuntimeError(
+                f"relaxed card content fallback failed for term {term!r}: {relaxed_error}"
+            ) from relaxed_error
 
 
 def should_regenerate(review_state: ReviewState) -> bool:
