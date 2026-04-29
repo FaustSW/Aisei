@@ -250,7 +250,7 @@
     const INITIAL_REGEN_STATUS = {
         needs_regeneration: {{ (card.needs_regeneration if card else false) | tojson }},
         regenerated_this_fetch: {{ (card.regenerated_this_fetch if card else false) | tojson }},
-        generation_number: {{ (card.generation_number if card else 'null') }}
+        generation_number: {{ (card.generation_number if card and card.generation_number is not none else none) | tojson }}
     };
 </script>
 <script src="{{ url_for('static', filename='js/card.js') }}"></script>
