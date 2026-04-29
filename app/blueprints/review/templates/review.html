@@ -228,6 +228,8 @@
     const INITIAL_PREVIEW_INTERVALS = {{ (card.preview_intervals if card else {}) | tojson }};
     const INITIAL_DAILY_NEW_LIMIT = {{ daily_new_limit }};
     const INITIAL_TTS_VOICE_ID = {{ tts_voice_id | tojson }};
+    window.INITIAL_TTS_VOICE_ID = {{ tts_voice_id | tojson }};
+    window.INITIAL_VOICE_SPEED = {{ tts_voice_speed | tojson }};
     
     // Stats object for the frontend dashboard
     const INITIAL_STATS = {

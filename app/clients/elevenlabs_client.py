@@ -41,7 +41,7 @@ class ElevenLabsClient:
             raise ValueError(f"No ElevenLabs key found for {username}")
         self.client = ElevenLabs(api_key=api_key)
 
-    def generate_audio(self, text, output_path, filename, voice_id, voice_speed):
+    def generate_audio(self, text, output_path, filename, voice_id):
         if voice_id is None:
             voice_id = self.DEFAULT_VOICE_ID
 
@@ -52,7 +52,6 @@ class ElevenLabsClient:
             output_format="mp3_44100_128",
             # Optional voice settings
             voice_settings=VoiceSettings(
-                speed=voice_speed if voice_speed is not None else 1.0,
                 stability=0.5,           # Neutral: Not too expressive, not too monotone
                 similarity_boost=0.75,   # Neutral: Standard clarity
                 style=0.0,               # Off

@@ -23,6 +23,10 @@ DEFAULT_DAILY_NEW_LIMIT = 20
 MIN_DAILY_NEW_LIMIT = 0
 MAX_DAILY_NEW_LIMIT = 999
 
+DEFAULT_TTS_VOICE_SPEED = 1.0
+MIN_TTS_VOICE_SPEED = 0.7
+MAX_TTS_VOICE_SPEED = 1.2
+
 
 def clamp_daily_new_limit(value: int) -> int:
     """Clamp the daily new-card limit to a safe integer range."""
@@ -54,6 +58,7 @@ def get_or_create_user_settings(user_id: int, db_session=None) -> UserSettings:
                 user_id=user_id,
                 daily_new_limit=DEFAULT_DAILY_NEW_LIMIT,
                 tts_voice_id=DEFAULT_TTS_VOICE_ID,
+                tts_voice_speed=DEFAULT_TTS_VOICE_SPEED,
             )
             db.add(settings)
             db.commit()
@@ -61,6 +66,12 @@ def get_or_create_user_settings(user_id: int, db_session=None) -> UserSettings:
 
         if not settings.tts_voice_id:
             settings.tts_voice_id = DEFAULT_TTS_VOICE_ID
+            db.add(settings)
+            db.commit()
+            db.refresh(settings)
+
+        if settings.tts_voice_speed is None:
+            settings.tts_voice_speed = DEFAULT_TTS_VOICE_SPEED
             db.add(settings)
             db.commit()
             db.refresh(settings)
@@ -127,24 +138,21 @@ def update_tts_voice_id(user_id: int, voice_id: str, db_session=None) -> UserSet
         if owns_session:
             db.close()
 
-MIN_VOICE_SPEED = 0.7
-MAX_VOICE_SPEED = 1.2
-DEFAULT_VOICE_SPEED = 1.0
+
+def validate_tts_voice_speed(speed: float | None) -> float:
+    """Normalize the user's preferred audio playback speed."""
+    if speed is None:
+        return DEFAULT_TTS_VOICE_SPEED
+
+    speed = float(speed)
+    return max(MIN_TTS_VOICE_SPEED, min(MAX_TTS_VOICE_SPEED, speed))
 
 
-def validate_tts_voice_speed(speed: float) -> float:
-    """Clamp and validate a voice speed value to the allowed range."""
-    try:
-        speed = float(speed)
-    except (TypeError, ValueError):
-        return DEFAULT_VOICE_SPEED
+def get_tts_voice_speed(user_id: int, db_session=None) -> float:
+    """Load the user's persisted audio playback speed."""
+    settings = get_or_create_user_settings(user_id, db_session=db_session)
+    return validate_tts_voice_speed(settings.tts_voice_speed)
 
-    if not (MIN_VOICE_SPEED <= speed <= MAX_VOICE_SPEED):
-        raise ValueError(
-            f"voice_speed must be between {MIN_VOICE_SPEED} and {MAX_VOICE_SPEED}"
-        )
-
-    return round(speed, 2)
 
 def update_tts_voice_speed(user_id: int, speed: float, db_session=None) -> UserSettings:
     """

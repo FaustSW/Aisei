@@ -38,4 +38,4 @@ class UserSettings(SQLModel, table=True):
 
     daily_new_limit: int = Field(default=20)
     tts_voice_id: str = Field(default=DEFAULT_TTS_VOICE_ID)
-    tts_voice_volume: float = Field(default=1.0)
+    tts_voice_speed: float = Field(default=1.0)
